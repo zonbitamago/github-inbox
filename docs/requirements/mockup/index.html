@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>github-inbox モックアップ</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #eef0f3;
+    --win: #ffffff;
+    --line: #d5d9de;
+    --line-soft: #e8ebee;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #2f6fdb;
+    --accent-soft: #e8f0fd;
+    --warn-bg: #fff4e5;
+    --warn-line: #f0b45a;
+    --err-bg: #fdecec;
+    --err-line: #e07a7a;
+    --ok: #2e8540;
+    --tag-bg: #f1f3f5;
+    --s-tag: #7a5af8;
+    --c-tag: #b7791f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  .page-head {
+    padding: 10px 20px;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .page-head strong { color: var(--text); }
+  .stage {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    align-items: flex-start;
+  }
+  /* ---------- アプリのウィンドウ ---------- */
+  .window {
+    flex: 1;
+    min-width: 0;
+    max-width: 1080px;
+    height: calc(100vh - 100px);
+    min-height: 560px;
+    background: var(--win);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f6f7f9;
+    border-bottom: 1px solid var(--line);
+    user-select: none;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; border: none; padding: 0; cursor: pointer; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+  .wtitle { flex: 1; text-align: center; font-size: 13px; color: var(--muted); margin-right: 52px; }
+  .bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; font-size: 13px; border-bottom: 1px solid var(--line);
+  }
+  .bar.err { background: var(--err-bg); border-color: var(--err-line); }
+  .bar.info { background: var(--accent-soft); }
+  .bar .grow { flex: 1; }
+  .tabs {
+    display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    border: none; background: none; padding: 10px 14px; cursor: pointer;
+    border-bottom: 2px solid transparent; color: var(--muted);
+  }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+  .tab .count { font-size: 12px; background: var(--tag-bg); border-radius: 10px; padding: 0 7px; margin-left: 4px; }
+  .tabs .spacer { flex: 1; }
+  .status-pill { align-self: center; font-size: 12px; color: var(--muted); }
+  .status-pill .led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 5px; }
+  .status-pill.bad .led { background: #d1242f; }
+  main { flex: 1; overflow: hidden; display: flex; }
+  .view { flex: 1; overflow: auto; padding: 14px 16px; min-width: 0; }
+  .split .view + .view { border-left: 1px solid var(--line); }
+  h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  h2 .sub { font-weight: normal; color: var(--muted); font-size: 12px; }
+  h3 { font-size: 13px; margin: 18px 0 8px; color: var(--muted); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .filters input[type="search"] { flex: 1; min-width: 160px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; }
+  .filters select { padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 1px 9px; font-size: 12px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn {
+    border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { background: #f6f7f9; }
+  .btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+  /* 出来事 */
+  .ev {
+    display: grid; grid-template-columns: 128px 1fr; gap: 2px 12px;
+    padding: 9px 8px; border-bottom: 1px solid var(--line-soft); cursor: pointer; border-radius: 6px;
+  }
+  .ev:hover { background: #f6f8fa; }
+  .ev.hl { background: #fff8c5; transition: background .4s; }
+  .ev .type { font-size: 12px; font-weight: 600; padding-top: 1px; }
+  .ev .target { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev .target .repo { color: var(--muted); }
+  .ev .meta { grid-column: 2; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev .meta .excerpt { color: var(--text); }
+  .ev .time { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--muted); }
+  .tag { display: inline-block; font-size: 11px; background: var(--tag-bg); border-radius: 4px; padding: 0 5px; margin-right: 4px; color: var(--text); }
+  .tag.result-bad { background: var(--err-bg); }
+  .tag.result-good { background: #e6f4ea; }
+  .prio { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 3px; padding: 0 4px; margin-left: 4px; color: #fff; vertical-align: 1px; }
+  .prio.s { background: var(--s-tag); }
+  .prio.c { background: var(--c-tag); }
+  body.no-prio .prio { display: none; }
+  .divider {
+    font-size: 12px; color: var(--muted); padding: 8px 6px 4px; border-bottom: 1px dashed var(--line); margin-top: 6px;
+  }
+  .divider.missed { color: #8a5a00; border-color: var(--warn-line); background: var(--warn-bg); border-radius: 6px 6px 0 0; border-bottom-style: solid; }
+  .empty { color: var(--muted); padding: 24px 8px; text-align: center; }
+  /* PR */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 7px 6px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  tr.row:hover td { background: #f6f8fa; cursor: pointer; }
+  td.title { min-width: 180px; width: 100%; }
+  td .sub-line { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  td.nowrap { white-space: nowrap; }
+  .reason { display: inline-block; font-size: 11.5px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin: 0 3px 2px 0; white-space: nowrap; }
+  .reason.review_pending { border-color: #8fb3f0; background: var(--accent-soft); }
+  .reason.changes_requested, .reason.ci_failed { border-color: var(--err-line); background: var(--err-bg); }
+  .reason.approved { border-color: #8fcf9d; background: #e6f4ea; }
+  .state { font-size: 12px; }
+  .state.merged { color: #8250df; } .state.closed { color: #cf222e; } .state.draft { color: var(--muted); } .state.open { color: var(--ok); }
+  .link-btn { border: none; background: none; color: var(--accent); cursor: pointer; padding: 0 4px; font-size: 12px; }
+  .reload-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+  /* 設定 */
+  .set-group { border: 1px solid var(--line); border-radius: 8px; padding: 4px 14px; margin-bottom: 14px; max-width: 640px; }
+  .set-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
+  .set-row:last-child { border-bottom: none; }
+  .set-row label { flex: 1; }
+  .set-row .hint { display: block; font-size: 12px; color: var(--muted); }
+  .set-row.disabled { opacity: .55; }
+  /* 終了・初回 */
+  .overlay {
+    position: absolute; inset: 0; background: rgba(238,240,243,.96);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px;
+  }
+  .onboard { max-width: 420px; }
+  .onboard h2 { justify-content: center; font-size: 18px; }
+  /* デモ操作 */
+  .demo {
+    width: 320px; flex-shrink: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    font-size: 13px; max-height: calc(100vh - 100px); overflow: auto;
+  }
+  .demo h4 { margin: 14px 0 6px; font-size: 13px; }
+  .demo h4:first-child { margin-top: 0; }
+  .demo .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .demo select { flex: 1; min-width: 0; padding: 4px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .demo .note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+  .demo ol { padding-left: 18px; margin: 6px 0; }
+  .demo li { margin-bottom: 6px; }
+  .demo .log { font-size: 12px; background: var(--tag-bg); border-radius: 6px; padding: 6px 8px; min-height: 34px; color: var(--muted); }
+  /* デスクトップ通知（OS の通知を真似たもの） */
+  #toasts { position: fixed; top: 14px; right: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
+  .toast {
+    width: 330px; background: rgba(250,250,252,.98); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; cursor: pointer; display: flex; gap: 10px;
+    animation: slidein .25s ease-out;
+  }
+  .toast .icon { width: 32px; height: 32px; border-radius: 8px; background: var(--text); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .toast .app { font-size: 11px; color: var(--muted); }
+  .toast .ttl { font-weight: 600; font-size: 13px; }
+  .toast .body { font-size: 12.5px; }
+  @keyframes slidein { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (max-width: 1100px) {
+    .stage { flex-direction: column; }
+    .demo { width: 100%; max-height: none; }
+    .window { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="page-head">
+  <strong>github-inbox（仮）モックアップ</strong> ― 要件の確認用の使い捨てです。データは架空、見た目（色・書体・余白）は仮で、設計の ⑨・⑪ で決めます。
+  右の「デモ操作」で出来事を起こしたり、受け取れない状態にしたりできます。
+</div>
+
+<div class="stage">
+  <div class="window" id="win">
+    <div class="titlebar">
+      <button class="dot red" id="btnClose" title="閉じる（アプリを終了する）"></button>
+      <button class="dot yellow" id="btnMin" title="最小化"></button>
+      <button class="dot green" title="拡大"></button>
+      <span class="wtitle">github-inbox（仮）</span>
+    </div>
+    <div id="statusBar"></div>
+    <div id="updateBar"></div>
+    <nav class="tabs" id="tabs"></nav>
+    <main id="main"></main>
+    <div id="overlay"></div>
+  </div>
+
+  <aside class="demo">
+    <h4>見ていただきたいこと</h4>
+    <ol>
+      <li><b>PR の一覧</b>: 1つにまとめ、更新の新しい順に並べ、自分待ちは理由のラベルだけで示す形にしました（D-016）。「自分待ちの理由あり」での絞り込みも加えています</li>
+      <li><b>出来事の一覧の日数</b>: PR の一覧の期間とは別に選べるようにしました（出来事の一覧の上と設定）</li>
+      <li><b>画面の並べ方</b>: 設定で選べるようにしました（下のボタンでも切り替えられます）</li>
+      <li><b>すべてのリンクをコピー</b>: PR の一覧の上に加えました。一覧に出ている PR（検索・絞り込み後）のリンクを、表示の順にコピーします（D-017）</li>
+      <li>出来事が1日数十件並んだときに、<b>1行の情報量</b>で読めるか</li>
+      <li>「受け取れていない」表示や、閉じていた間の出来事の区切りの<b>目立ち方</b></li>
+      <li>その他、触ってみて違和感があるところ</li>
+    </ol>
+
+    <h4>画面の並べ方</h4>
+    <div class="row">
+      <button class="btn" data-layout="A">A: タブで切り替え</button>
+      <button class="btn" data-layout="B">B: 左右に並べる</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="optPrio" checked> 優先度 S・C の印を出す</label>
+    </div>
+    <p class="note"><span class="prio s">S</span> できれば／<span class="prio c">C</span> あれば。印の無いものは M（必須）です。</p>
+
+    <h4>出来事を起こす</h4>
+    <div class="row">
+      <select id="demoType">
+        <option value="review_requested">B さんからのレビュー依頼</option>
+        <option value="review_requested_team">チーム宛てのレビュー依頼（S）</option>
+        <option value="review">自分の PR へのレビュー（修正依頼）</option>
+        <option value="comment">自分の PR へのコメント</option>
+        <option value="ci_failure">CI の結果（failure）</option>
+        <option value="ci_success">CI の結果（success）</option>
+        <option value="mention">issue でのメンション</option>
+        <option value="assign">issue のアサイン</option>
+        <option value="participating">参加中の PR への発言</option>
+        <option value="bot">bot の発言（自分の PR）</option>
+        <option value="discussion">Discussions でのメンション（C）</option>
+      </select>
+      <button class="btn primary" id="btnFire">起こす</button>
+    </div>
+    <p class="note">レビュー依頼を起こすと、PR の一覧にはリロードするまで出ません（D-013）。設定でその種類のデスクトップ通知をオフにすると、一覧にだけ載ります。</p>
+
+    <h4>受け取れない状態</h4>
+    <div class="row">
+      <select id="demoStatus">
+        <option value="ok">受け取れている</option>
+        <option value="network">ネットワークが切れた</option>
+        <option value="auth">認証が切れた</option>
+        <option value="rate">GitHub の利用制限にかかった</option>
+      </select>
+    </div>
+    <p class="note">受け取れない間に起こした出来事は、受け取れるようになったときに一覧に載ります（デスクトップ通知は出しません）。</p>
+
+    <h4>そのほか</h4>
+    <div class="row">
+      <button class="btn" id="btnRestart">閉じて、しばらくして立ち上げ直す</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnUpdate">新しい版の知らせを出す（S）</button>
+      <button class="btn" id="btnOnboard">初回起動の画面</button>
+    </div>
+
+    <h4>デモの記録</h4>
+    <div class="log" id="log">まだ何も起きていません。</div>
+  </aside>
+</div>
+<div id="toasts"></div>
+
+<script>
+(() => {
+  // ------------------------------------------------------------------
+  // 架空のデータ（会社・人・リポジトリはすべて架空）
+  // ------------------------------------------------------------------
+  const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+  const now = () => Date.now();
+  const ME = 'you';
+
+  const TYPE = {
+    review_requested: 'レビュー依頼',
+    review: 'レビュー',
+    comment: 'コメント',
+    ci: 'CI の結果',
+    mention: 'メンション',
+    assign: 'アサイン',
+    participating: '参加中の PR への発言',
+  };
+  const REASON = {
+    review_pending: 'レビュー依頼に未対応',
+    changes_requested: '修正依頼あり',
+    ci_failed: 'CI 失敗',
+    approved: '承認済み（マージ待ち）',
+    assigned: 'アサイン',
+  };
+  const STATE = { open: 'オープン', draft: '下書き', merged: 'マージ済み', closed: 'クローズ' };
+
+  let seq = 1;
+  const ev = (o) => ({ id: seq++, kind: 'PR', bot: false, missed: false, ...o });
+
+  let events = [
+    ev({ type: 'review_requested', repo: 'web-app', num: 128, title: 'ログイン画面のバリデーションを修正', actor: 'suzuki', at: now() - 3 * MIN, text: 'あなたにレビューを依頼しました' }),
+    ev({ type: 'review', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'tanaka', at: now() - 12 * MIN, result: '修正依頼', resultBad: true, text: 'エラー時のレスポンス形式を確認してください' }),
+    ev({ type: 'comment', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'tanaka', at: now() - 14 * MIN, text: 'ページサイズの上限は 100 で良いですか？' }),
+    ev({ type: 'comment', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'tanaka', at: now() - 15 * MIN, text: 'テストケースを1つ追加してほしいです' }),
+    ev({ type: 'comment', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'sato', at: now() - 16 * MIN, text: 'README の更新も必要そうです' }),
+    ev({ type: 'ci', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'CI / test', at: now() - 20 * MIN, result: 'failure', resultBad: true, text: 'ワークフロー「CI」が完了しました' }),
+    ev({ type: 'mention', kind: 'issue', repo: 'web-app', num: 140, title: '決済画面で 500 エラー', actor: 'sato', at: now() - 45 * MIN, text: '@you 再現手順を見てもらえますか' }),
+    ev({ type: 'assign', kind: 'issue', repo: 'infra', num: 80, title: '証明書の更新', actor: 'tanaka', at: now() - 80 * MIN, text: 'あなたが担当者になりました' }),
+    ev({ type: 'participating', repo: 'web-app', num: 125, title: '一覧のソート順を保存', actor: 'sato', at: now() - 2 * HOUR, text: 'ソートのキーは更新日時でそろえましょう' }),
+    ev({ type: 'comment', repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', actor: 'coverage-bot', bot: true, at: now() - 150 * MIN, text: 'カバレッジ 82.1%（+0.4%）' }),
+    ev({ type: 'ci', repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', actor: 'CI / build', at: now() - 3 * HOUR, result: 'success', text: 'ワークフロー「CI」が完了しました' }),
+    ev({ type: 'ci', repo: 'api-server', num: 339, title: '在庫引当のリトライ処理', actor: 'CI / e2e', at: now() - 5 * HOUR, result: 'cancelled', text: 'ワークフロー「E2E」が完了しました' }),
+    ev({ type: 'review', repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', actor: 'suzuki', at: now() - 6 * HOUR, result: '承認', text: 'LGTM' }),
+    ev({ type: 'review_requested', repo: 'mobile', num: 56, title: 'プッシュ通知の権限ダイアログの文言', actor: 'sato', team: '@example-org/mobile', at: now() - 1 * DAY, text: 'チーム @example-org/mobile にレビューを依頼しました' }),
+    ev({ type: 'mention', repo: 'infra', num: 77, title: 'ステージング環境の Terraform を更新', actor: 'tanaka', at: now() - 2 * DAY, text: '@you 確認をお願いします' }),
+    ev({ type: 'mention', kind: 'discussion', repo: 'web-app', num: 12, title: 'リリース手順の見直し', actor: 'suzuki', discussion: true, at: now() - 3 * DAY, text: '@you 意見をもらえますか' }),
+    ev({ type: 'review_requested', repo: 'web-app', num: 120, title: '検索フォームのリファクタ', actor: 'sato', at: now() - 8 * DAY, text: 'あなたにレビューを依頼しました' }),
+  ];
+
+  const pr = (o) => ({ reasons: [], team: null, ...o });
+  let prs = [
+    pr({ repo: 'web-app', num: 128, title: 'ログイン画面のバリデーションを修正', author: 'suzuki', state: 'open', updated: now() - 3 * MIN, reasons: ['review_pending'] }),
+    pr({ repo: 'api-server', num: 342, title: '注文 API のページングを追加', author: ME, state: 'open', updated: now() - 12 * MIN, reasons: ['changes_requested', 'ci_failed'] }),
+    pr({ repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', author: ME, state: 'open', updated: now() - 3 * HOUR, reasons: ['approved'] }),
+    pr({ repo: 'infra', num: 77, title: 'ステージング環境の Terraform を更新', author: 'tanaka', state: 'open', updated: now() - 2 * DAY, reasons: ['assigned'] }),
+    pr({ repo: 'mobile', num: 56, title: 'プッシュ通知の権限ダイアログの文言', author: 'sato', state: 'open', updated: now() - 1 * DAY, reasons: ['review_pending'], team: '@example-org/mobile' }),
+    pr({ repo: 'api-server', num: 339, title: '在庫引当のリトライ処理', author: ME, state: 'open', updated: now() - 4 * DAY, reasons: ['ci_failed'] }),
+    pr({ repo: 'web-app', num: 120, title: '検索フォームのリファクタ', author: 'sato', state: 'open', updated: now() - 8 * DAY, reasons: ['review_pending'] }),
+    pr({ repo: 'api-server', num: 345, title: 'ログ出力の整理', author: ME, state: 'draft', updated: now() - 1 * DAY }),
+    pr({ repo: 'web-app', num: 126, title: 'ヘッダーのレイアウト崩れを修正', author: ME, state: 'open', updated: now() - 36 * HOUR }),
+    pr({ repo: 'web-app', num: 125, title: '一覧のソート順を保存', author: 'suzuki', state: 'open', updated: now() - 2 * HOUR }),
+    pr({ repo: 'web-app', num: 119, title: '依存パッケージの更新', author: 'dependabot', state: 'merged', updated: now() - 2 * DAY }),
+    pr({ repo: 'api-server', num: 330, title: '認可ミドルウェアの共通化', author: 'suzuki', state: 'merged', updated: now() - 3 * DAY }),
+    pr({ repo: 'infra', num: 70, title: '監視アラートのしきい値見直し', author: 'tanaka', state: 'closed', updated: now() - 5 * DAY }),
+    pr({ repo: 'mobile', num: 50, title: 'ビルド設定の整理', author: ME, state: 'merged', updated: now() - 12 * DAY }),
+    pr({ repo: 'web-app', num: 110, title: '画像の遅延読み込み', author: 'sato', state: 'merged', updated: now() - 20 * DAY }),
+  ];
+  let pendingPRs = [];   // リロードするまで一覧に出ない PR
+  let queued = [];       // 受け取れない間に起きた出来事
+
+  // ------------------------------------------------------------------
+  // 状態
+  // ------------------------------------------------------------------
+  const state = {
+    layout: 'A', tab: 'events', period: 7, evDays: 7,
+    status: 'ok', closed: false, onboarding: false, update: false, restarted: false,
+    lastReload: now(), lastReceived: now(),
+    ev: { q: '', types: new Set(), repo: '' },
+    pr: { q: '', state: '', repo: '', reason: '' },
+    notif: { review_requested: true, review: true, comment: true, ci: true, mention: true, assign: true, participating: true, bot: true, discussion: true },
+    autostart: false, lang: 'ja', highlight: null,
+  };
+
+  // ------------------------------------------------------------------
+  // 小道具
+  // ------------------------------------------------------------------
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ago = (t) => {
+    const d = now() - t;
+    if (d < MIN) return 'たった今';
+    if (d < HOUR) return Math.floor(d / MIN) + '分前';
+    if (d < DAY) return Math.floor(d / HOUR) + '時間前';
+    return Math.floor(d / DAY) + '日前';
+  };
+  const hhmm = (t) => new Date(t).toTimeString().slice(0, 5);
+  const S = '<span class="prio s">S</span>', C = '<span class="prio c">C</span>';
+  const log = (msg) => { $('#log').innerHTML = `<b>${hhmm(now())}</b> ${esc(msg)}<br>` + ($('#log').dataset.started ? $('#log').innerHTML : ''); $('#log').dataset.started = '1'; };
+  const inPeriod = (t) => now() - t <= state.period * DAY;
+  const repoOf = (r) => 'example-org/' + r;
+
+  // ------------------------------------------------------------------
+  // 描画
+  // ------------------------------------------------------------------
+  function render() {
+    document.body.classList.toggle('no-prio', !$('#optPrio').checked);
+    renderStatus(); renderUpdate(); renderTabs(); renderMain(); renderOverlay();
+    document.querySelectorAll('[data-layout]').forEach((b) => b.classList.toggle('primary', b.dataset.layout === state.layout));
+  }
+
+  function renderStatus() {
+    const msg = {
+      network: ['GitHub につながらないため、出来事を受け取れていません（ネットワーク）。', 'つながり次第、受け取りを再開します。', ''],
+      auth: ['認証が切れたため、出来事を受け取れていません。', '', '<button class="btn">もう一度サインインする</button>'],
+      rate: ['GitHub の利用制限にかかったため、出来事を受け取れていません。', `${hhmm(now() + 25 * MIN)} ごろに再開します。`, ''],
+    }[state.status];
+    $('#statusBar').innerHTML = msg
+      ? `<div class="bar err"><b>⚠</b><span class="grow">${msg[0]} ${msg[1]}<br><small>最後に受け取った時刻: ${hhmm(state.lastReceived)}</small></span>${msg[2]}</div>`
+      : '';
+  }
+
+  function renderUpdate() {
+    $('#updateBar').innerHTML = state.update
+      ? `<div class="bar info"><span class="grow">新しい版 0.2.0 が出ています。手順書に沿って入れ直してください。${S}</span><button class="btn" id="updOpen">配布場所を開く</button><button class="link-btn" id="updClose">閉じる</button></div>`
+      : '';
+    if (state.update) {
+      $('#updOpen').onclick = () => log('（モックアップ）配布場所を開きます。置き場所は ⑧ で決めます。');
+      $('#updClose').onclick = () => { state.update = false; render(); };
+    }
+  }
+
+  const isWaiting = (p) => p.state === 'open' && p.reasons.length > 0;
+  function waitingPRs() { return prs.filter((p) => isWaiting(p) && inPeriod(p.updated)); }
+  function recentPRs() { return prs.filter((p) => inPeriod(p.updated)); }
+  function visibleEvents() { return events.filter((e) => now() - e.at <= state.evDays * DAY); }
+
+  function renderTabs() {
+    const ok = state.status === 'ok';
+    const pill = `<span class="status-pill ${ok ? '' : 'bad'}"><span class="led"></span>${ok ? '受け取り中' : '受け取れていません'}</span>`;
+    const t = (id, label, count) => `<button class="tab" data-tab="${id}" aria-selected="${state.tab === id}">${label}${count != null ? `<span class="count">${count}</span>` : ''}</button>`;
+    let html;
+    if (state.layout === 'A') {
+      html = t('events', '出来事', visibleEvents().length) + t('prs', 'PR', recentPRs().length) + t('settings', '設定');
+    } else {
+      html = t('lists', '一覧') + t('settings', '設定');
+    }
+    $('#tabs').innerHTML = html + `<span class="spacer"></span>${pill}`;
+    $('#tabs').querySelectorAll('.tab').forEach((b) => b.onclick = () => { state.tab = b.dataset.tab; render(); });
+  }
+
+  function renderMain() {
+    const main = $('#main');
+    main.className = '';
+    if (state.layout === 'B' && state.tab !== 'settings') {
+      state.tab = 'lists';
+      main.className = 'split';
+      main.innerHTML = `<section class="view" id="vEvents"></section><section class="view" id="vPrs"></section>`;
+      renderEvents($('#vEvents')); renderPRs($('#vPrs'));
+      return;
+    }
+    if (state.layout === 'A' && state.tab === 'lists') state.tab = 'events';
+    main.innerHTML = `<section class="view" id="vOne"></section>`;
+    const v = $('#vOne');
+    if (state.tab === 'events') renderEvents(v);
+    else if (state.tab === 'prs') renderPRs(v);
+    else renderSettings(v);
+  }
+
+  // ---------- 出来事の一覧 ----------
+  function renderEvents(el) {
+    const f = state.ev;
+    const repos = [...new Set(events.map((e) => e.repo))].sort();
+    const types = Object.keys(TYPE);
+    let list = visibleEvents()
+      .filter((e) => !f.types.size || f.types.has(e.type))
+      .filter((e) => !f.repo || e.repo === f.repo)
+      .filter((e) => !f.q || (e.title + e.text + e.actor + e.repo + e.num).toLowerCase().includes(f.q.toLowerCase()))
+      .sort((a, b) => b.at - a.at);
+
+    el.innerHTML = `
+      <h2>出来事の一覧 <span class="sub">${list.length} 件</span><span style="flex:1"></span>
+        <label class="sub">表示する日数 ${S} <select id="evDays">${[1, 3, 7, 14, 30].map((d) => `<option value="${d}" ${state.evDays === d ? 'selected' : ''}>直近 ${d} 日</option>`).join('')}</select></label></h2>
+      <div class="filters">
+        <input type="search" id="evQ" placeholder="タイトル・内容・人・リポジトリで検索" value="${esc(f.q)}">
+        <select id="evRepo"><option value="">すべてのリポジトリ</option>${repos.map((r) => `<option ${f.repo === r ? 'selected' : ''} value="${r}">${repoOf(r)}</option>`).join('')}</select>
+      </div>
+      <div class="filters chips" id="evTypes">${types.map((t) => `<button class="chip" data-type="${t}" aria-pressed="${f.types.has(t)}">${TYPE[t]}</button>`).join('')}</div>
+      <div id="evList"></div>`;
+
+    const box = el.querySelector('#evList');
+    if (!list.length) { box.innerHTML = `<div class="empty">条件に合う出来事はありません。</div>`; }
+    let html = '', inMissed = false, missedCount = list.filter((e) => e.missed).length;
+    list.forEach((e) => {
+      if (e.missed && !inMissed) { html += `<div class="divider missed">アプリが閉じていた間に起きた出来事（${missedCount} 件）― デスクトップ通知は出していません</div>`; inMissed = true; }
+      if (!e.missed && inMissed) { html += `<div class="divider">前回立ち上げていた間に受け取った出来事</div>`; inMissed = false; }
+      const kind = e.kind === 'issue' ? 'issue ' : e.kind === 'discussion' ? 'Discussion ' : '';
+      const tags = [
+        e.result ? `<span class="tag ${e.resultBad ? 'result-bad' : e.result === 'success' || e.result === '承認' ? 'result-good' : ''}">${esc(e.result)}</span>` : '',
+        e.bot ? `<span class="tag">bot</span>` : '',
+        e.team ? `<span class="tag">チーム宛て</span>${S}` : '',
+        e.discussion ? C : '',
+      ].join('');
+      html += `
+        <div class="ev ${state.highlight === e.id ? 'hl' : ''}" data-id="${e.id}" title="クリックで GitHub を開く">
+          <div class="type">${TYPE[e.type]}</div>
+          <div class="target"><span class="repo">${repoOf(e.repo)}</span> ${kind}#${e.num} ${esc(e.title)}</div>
+          <div class="time">${ago(e.at)}</div>
+          <div class="meta">${tags}${esc(e.actor)}${e.bot ? '' : ''} ― <span class="excerpt">${esc(e.text)}</span></div>
+        </div>`;
+    });
+    if (list.length) box.innerHTML = html;
+
+    el.querySelector('#evDays').onchange = (x) => { state.evDays = +x.target.value; log(`出来事の一覧を直近 ${state.evDays} 日にしました（PR の一覧の期間とは別です）。`); render(); };
+    el.querySelector('#evQ').oninput = (x) => { f.q = x.target.value; renderKeepFocus('#evQ'); };
+    el.querySelector('#evRepo').onchange = (x) => { f.repo = x.target.value; render(); };
+    el.querySelectorAll('#evTypes .chip').forEach((c) => c.onclick = () => { const t = c.dataset.type; f.types.has(t) ? f.types.delete(t) : f.types.add(t); render(); });
+    box.querySelectorAll('.ev').forEach((r) => r.onclick = () => {
+      const e = events.find((x) => x.id === +r.dataset.id);
+      log(`（モックアップ）ブラウザで ${repoOf(e.repo)} #${e.num} を開きます。`);
+    });
+  }
+
+  // ---------- PR の一覧 ----------
+  function renderPRs(el) {
+    const f = state.pr;
+    const match = (p) =>
+      (!f.q || (p.title + p.repo + p.num + p.author).toLowerCase().includes(f.q.toLowerCase())) &&
+      (!f.repo || p.repo === f.repo) &&
+      (!f.state || p.state === f.state);
+    const byReason = (p) => !f.reason || (f.reason === '__any' ? isWaiting(p) : isWaiting(p) && p.reasons.includes(f.reason));
+    const list = recentPRs().filter(match).filter(byReason).sort((a, b) => b.updated - a.updated);
+    const waitingCount = list.filter(isWaiting).length;
+    const repos = [...new Set(prs.map((p) => p.repo))].sort();
+    const periods = [1, 3, 7, 14, 30];
+
+    const row = (p) => `
+      <tr class="row" data-key="${p.repo}#${p.num}">
+        <td class="title">${esc(p.title)}<div class="sub-line">${repoOf(p.repo)} #${p.num} ・ ${esc(p.author === ME ? 'あなた' : p.author)}</div></td>
+        <td class="nowrap"><span class="state ${p.state}">${STATE[p.state]}</span></td>
+        <td>${isWaiting(p) ? p.reasons.map((r) => `<span class="reason ${r}">${REASON[r]}</span>`).join('') + (p.team ? `<span class="tag">${esc(p.team)}</span>${S}` : '') : ''}</td>
+        <td class="nowrap">${ago(p.updated)}</td>
+        <td class="nowrap"><button class="link-btn copy" title="リンクをコピー">⧉</button>${C}</td>
+      </tr>`;
+
+    el.innerHTML = `
+      <div class="reload-row">
+        <button class="btn" id="btnReload">↻ リロード</button>
+        <button class="btn" id="btnCopyAll" title="一覧に出ている PR のリンクを、表示の順に1行1つずつコピーします">すべてのリンクをコピー</button>
+        <span>最終更新 ${hhmm(state.lastReload)}（自動では更新しません）</span>
+        <span style="flex:1"></span>
+        <label>期間 ${S}
+          <select id="prPeriod">${periods.map((d) => `<option value="${d}" ${state.period === d ? 'selected' : ''}>直近 ${d} 日</option>`).join('')}</select>
+        </label>
+      </div>
+      <div class="filters">
+        <input type="search" id="prQ" placeholder="タイトル・リポジトリ・作成者で検索" value="${esc(f.q)}">
+        <select id="prRepo"><option value="">すべてのリポジトリ</option>${repos.map((r) => `<option ${f.repo === r ? 'selected' : ''} value="${r}">${repoOf(r)}</option>`).join('')}</select>
+        <select id="prState"><option value="">すべての状態</option>${Object.keys(STATE).map((s) => `<option ${f.state === s ? 'selected' : ''} value="${s}">${STATE[s]}</option>`).join('')}</select>
+        <select id="prReason"><option value="">自分待ちの理由: すべて</option><option value="__any" ${f.reason === '__any' ? 'selected' : ''}>自分待ちの理由あり（どれか1つ）</option>${Object.keys(REASON).map((r) => `<option ${f.reason === r ? 'selected' : ''} value="${r}">${REASON[r]}</option>`).join('')}</select>
+      </div>
+
+      <h2>PR の一覧 <span class="sub">直近 ${state.period} 日に関わった PR ${list.length} 件（うち自分待ち ${waitingCount} 件）・更新の新しい順</span></h2>
+      ${list.length ? `<table><thead><tr><th>PR</th><th>状態</th><th>自分待ちの理由</th><th>更新</th><th></th></tr></thead><tbody>${list.map(row).join('')}</tbody></table>` : `<div class="empty">条件に合う PR はありません。</div>`}
+    `;
+
+    el.querySelector('#btnReload').onclick = () => {
+      const n = pendingPRs.length;
+      prs = [...pendingPRs, ...prs]; pendingPRs = [];
+      state.lastReload = now();
+      log(n ? `リロードしました。新しく ${n} 件の PR が一覧に出ました。` : 'リロードしました（新しい PR はありません）。');
+      render();
+    };
+    el.querySelector('#btnCopyAll').onclick = () => {
+      const text = list.map((p) => `https://github.com/example-org/${p.repo}/pull/${p.num}`).join('\n');
+      const done = () => log(`一覧に出ている ${list.length} 件のリンクをコピーしました（F-34）。先頭: ${text.split('\n').slice(0, 2).join(' / ')}${list.length > 2 ? ' …' : ''}`);
+      try { navigator.clipboard.writeText(text).then(done, done); } catch (e) { done(); }
+    };
+    el.querySelector('#prPeriod').onchange = (x) => { state.period = +x.target.value; log(`PR の一覧の期間を直近 ${state.period} 日にしました（出来事の一覧の日数とは別です）。`); render(); };
+    el.querySelector('#prQ').oninput = (x) => { f.q = x.target.value; renderKeepFocus('#prQ'); };
+    el.querySelector('#prRepo').onchange = (x) => { f.repo = x.target.value; render(); };
+    el.querySelector('#prState').onchange = (x) => { f.state = x.target.value; render(); };
+    el.querySelector('#prReason').onchange = (x) => { f.reason = x.target.value; render(); };
+    el.querySelectorAll('tr.row').forEach((r) => r.onclick = (x) => {
+      if (x.target.classList.contains('copy')) { log(`（モックアップ）${r.dataset.key} のリンクをコピーしました。`); return; }
+      log(`（モックアップ）ブラウザで ${r.dataset.key} を開きます。`);
+    });
+  }
+
+  // ---------- 設定 ----------
+  function renderSettings(el) {
+    const n = state.notif;
+    const toggle = (key, label, hint = '', mark = '') => `
+      <div class="set-row"><label for="n_${key}">${label}${mark}<span class="hint">${hint}</span></label>
+      <input type="checkbox" id="n_${key}" data-key="${key}" ${n[key] ? 'checked' : ''}></div>`;
+    el.innerHTML = `
+      <h2>設定</h2>
+      <h3>デスクトップ通知（オフにしても出来事の一覧には載ります）</h3>
+      <div class="set-group">
+        ${toggle('review_requested', 'レビュー依頼', 'チーム宛ての依頼も含みます')}
+        ${toggle('review', 'レビュー', '自分の PR への承認・修正依頼・コメントのみ')}
+        ${toggle('comment', 'コメント', '自分の PR へのコメント')}
+        ${toggle('ci', 'CI の結果', '自分が起動した GitHub Actions の完了（すべての結果）')}
+        ${toggle('mention', 'メンション')}
+        ${toggle('assign', 'アサイン')}
+        ${toggle('participating', '参加中の PR への発言', '自分がレビュー・コメントした他人の open の PR')}
+        ${toggle('discussion', 'Discussions でのメンション', '', C)}
+        ${toggle('bot', 'bot の発言', 'オフにすると、上の種類に関係なく bot の発言ではデスクトップ通知を出しません')}
+        <div class="set-row disabled"><label>時間帯を決めてデスクトップ通知を止める${C}<span class="hint">例: 19:00〜9:00 は止める</span></label><input type="checkbox" disabled></div>
+      </div>
+      <h3>一覧</h3>
+      <div class="set-group">
+        <div class="set-row"><label>PR の一覧の期間${S}<span class="hint">1〜30日、既定7日</span></label>
+          <input type="number" min="1" max="30" value="${state.period}" id="setPeriod" style="width:64px"> 日</div>
+        <div class="set-row"><label>出来事の一覧に出す日数${S}<span class="hint">PR の一覧の期間とは別に選べます。閉じていた間の出来事もこの日数まで遡ります（1〜30日、既定7日）</span></label>
+          <input type="number" min="1" max="30" value="${state.evDays}" id="setEvDays" style="width:64px"> 日</div>
+        <div class="set-row"><label>画面の並べ方${S}<span class="hint">出来事の一覧と PR の一覧</span></label>
+          <label style="flex:0;white-space:nowrap"><input type="radio" name="layout" value="A" ${state.layout === 'A' ? 'checked' : ''}> タブで切り替える</label>
+          <label style="flex:0;white-space:nowrap"><input type="radio" name="layout" value="B" ${state.layout === 'B' ? 'checked' : ''}> 左右に並べる</label></div>
+      </div>
+      <h3>アプリ</h3>
+      <div class="set-group">
+        <div class="set-row"><label for="setAuto">ログイン時に自動で立ち上げる${S}<span class="hint">閉じるとアプリは終了します。立ち上げ忘れを防ぎたいときに</span></label><input type="checkbox" id="setAuto" ${state.autostart ? 'checked' : ''}></div>
+        <div class="set-row"><label>表示言語${S}<span class="hint">モックアップでは切り替わりません</span></label>
+          <label style="flex:0"><input type="radio" name="lang" ${state.lang === 'ja' ? 'checked' : ''}> 日本語</label>
+          <label style="flex:0"><input type="radio" name="lang" ${state.lang === 'en' ? 'checked' : ''}> English</label></div>
+      </div>
+      <h3>アカウント</h3>
+      <div class="set-group">
+        <div class="set-row"><label>you（example-org）でサインイン中<span class="hint">GitHub には読み取りだけを行います</span></label><button class="btn" id="setSignout">サインアウト</button>${S}</div>
+        <div class="set-row"><label>バージョン 0.1.0</label></div>
+      </div>`;
+    el.querySelectorAll('input[data-key]').forEach((c) => c.onchange = () => { n[c.dataset.key] = c.checked; log(`デスクトップ通知「${c.parentElement.querySelector('label').firstChild.textContent}」を${c.checked ? 'オン' : 'オフ'}にしました。`); });
+    el.querySelector('#setPeriod').onchange = (x) => { state.period = Math.min(30, Math.max(1, +x.target.value || 7)); render(); };
+    el.querySelector('#setEvDays').onchange = (x) => { state.evDays = Math.min(30, Math.max(1, +x.target.value || 7)); render(); };
+    el.querySelectorAll('input[name="layout"]').forEach((r) => r.onchange = () => { state.layout = r.value; log(`画面の並べ方を「${r.value === 'A' ? 'タブで切り替える' : '左右に並べる'}」にしました。`); render(); });
+    el.querySelector('#setAuto').onchange = (x) => { state.autostart = x.target.checked; };
+    el.querySelector('#setSignout').onclick = () => { state.onboarding = true; log('サインアウトしました。'); render(); };
+  }
+
+  // ---------- 終了・初回起動 ----------
+  function renderOverlay() {
+    const o = $('#overlay');
+    if (state.closed) {
+      o.innerHTML = `<div class="overlay"><div><b>アプリは終了しました</b></div><div style="color:var(--muted);font-size:13px">閉じると終了し、出来事の受け取りも止まります（F-24）。<br>閉じていた間の出来事は、次に立ち上げたとき一覧に出ます。</div><button class="btn primary" id="ovStart">立ち上げる</button></div>`;
+      $('#ovStart').onclick = restart;
+    } else if (state.onboarding) {
+      o.innerHTML = `<div class="overlay"><div class="onboard">
+        <h2>github-inbox（仮）へようこそ</h2>
+        <p>自分の GitHub アカウントでサインインすると、自分に関わる出来事と、自分待ちの PR が見られるようになります。</p>
+        <p style="font-size:12.5px;color:var(--muted)">ブラウザで GitHub の認証画面が開きます。本アプリは GitHub を読み取るだけで、書き込みはしません。</p>
+        <p><button class="btn primary" id="ovSignin">GitHub でサインインする</button></p>
+        <p style="font-size:12.5px"><label><input type="checkbox" ${state.autostart ? 'checked' : ''} id="ovAuto"> ログイン時に自動で立ち上げる ${S}</label></p>
+      </div></div>`;
+      $('#ovSignin').onclick = () => { state.onboarding = false; log('（モックアップ）サインインしました。'); render(); };
+      $('#ovAuto').onchange = (x) => { state.autostart = x.target.checked; };
+    } else {
+      o.innerHTML = '';
+    }
+  }
+
+  function renderKeepFocus(sel) {
+    const el = $(sel); const pos = el.selectionStart;
+    render();
+    const again = $(sel); if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+  }
+
+  // ------------------------------------------------------------------
+  // デモ操作
+  // ------------------------------------------------------------------
+  let prNum = 150;
+  function makeEvent(kind) {
+    const n = prNum++;
+    const T = {
+      review_requested: () => ({ e: ev({ type: 'review_requested', repo: 'web-app', num: n, title: '商品一覧のフィルタを追加', actor: 'suzuki', at: now(), text: 'あなたにレビューを依頼しました' }), p: pr({ repo: 'web-app', num: n, title: '商品一覧のフィルタを追加', author: 'suzuki', state: 'open', updated: now(), reasons: ['review_pending'] }) }),
+      review_requested_team: () => ({ e: ev({ type: 'review_requested', repo: 'mobile', num: n, title: 'オフライン時の再送処理', actor: 'sato', team: '@example-org/mobile', at: now(), text: 'チーム @example-org/mobile にレビューを依頼しました' }), p: pr({ repo: 'mobile', num: n, title: 'オフライン時の再送処理', author: 'sato', state: 'open', updated: now(), reasons: ['review_pending'], team: '@example-org/mobile' }) }),
+      review: () => ({ e: ev({ type: 'review', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'suzuki', at: now(), result: '修正依頼', resultBad: true, text: '境界値のテストを追加してください' }) }),
+      comment: () => ({ e: ev({ type: 'comment', repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', actor: 'tanaka', at: now(), text: 'ボタンの文字色も合わせてもらえますか' }) }),
+      ci_failure: () => ({ e: ev({ type: 'ci', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'CI / test', at: now(), result: 'failure', resultBad: true, text: 'ワークフロー「CI」が完了しました' }) }),
+      ci_success: () => ({ e: ev({ type: 'ci', repo: 'web-app', num: 131, title: 'ダークモードの配色を調整', actor: 'CI / build', at: now(), result: 'success', text: 'ワークフロー「CI」が完了しました' }) }),
+      mention: () => ({ e: ev({ type: 'mention', kind: 'issue', repo: 'web-app', num: n, title: '検索結果が0件になる', actor: 'tanaka', at: now(), text: '@you この件わかりますか？' }) }),
+      assign: () => ({ e: ev({ type: 'assign', kind: 'issue', repo: 'infra', num: n, title: 'バックアップの保存先を変更', actor: 'sato', at: now(), text: 'あなたが担当者になりました' }) }),
+      participating: () => ({ e: ev({ type: 'participating', repo: 'web-app', num: 125, title: '一覧のソート順を保存', actor: 'tanaka', at: now(), text: 'テストも追加しておきました' }) }),
+      bot: () => ({ e: ev({ type: 'comment', repo: 'api-server', num: 342, title: '注文 API のページングを追加', actor: 'coverage-bot', bot: true, at: now(), text: 'カバレッジ 79.4%（-1.2%）' }) }),
+      discussion: () => ({ e: ev({ type: 'mention', kind: 'discussion', repo: 'web-app', num: 13, title: '週次リリースの曜日', actor: 'suzuki', discussion: true, at: now(), text: '@you 水曜でどうでしょう' }) }),
+    };
+    return T[kind]();
+  }
+
+  function notifyAllowed(e) {
+    if (e.bot && !state.notif.bot) return false;
+    if (e.discussion) return state.notif.discussion;
+    return state.notif[e.type];
+  }
+
+  function fire() {
+    const kind = $('#demoType').value;
+    const { e, p } = makeEvent(kind);
+    if (state.closed) { log('アプリが終了しているため受け取りません。立ち上げたときに一覧に出ます。'); queued.push({ e, p, missed: true }); return; }
+    if (state.status !== 'ok') { queued.push({ e, p }); log(`「${TYPE[e.type]}」が起きましたが、受け取れない状態です。受け取れるようになったら一覧に載せます。`); return; }
+    receive(e, p, true);
+  }
+
+  function receive(e, p, withToast) {
+    events.push(e);
+    if (p) pendingPRs.push(p);
+    state.lastReceived = now();
+    const allowed = notifyAllowed(e);
+    if (withToast && allowed) toast(e);
+    log(`「${TYPE[e.type]}」を受け取りました。` + (withToast ? (allowed ? 'デスクトップ通知を出しました。' : 'この種類はデスクトップ通知がオフなので、一覧にだけ載せました。') : '') + (p ? '（PR の一覧にはリロードで出ます）' : ''));
+    render();
+  }
+
+  function toast(e) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    const kind = e.kind === 'issue' ? 'issue ' : e.kind === 'discussion' ? 'Discussion ' : '';
+    t.innerHTML = `<div class="icon">gi</div><div><div class="app">github-inbox（仮）・デスクトップ通知</div>
+      <div class="ttl">${TYPE[e.type]}${e.result ? '：' + esc(e.result) : ''}</div>
+      <div class="body">${repoOf(e.repo)} ${kind}#${e.num} ${esc(e.title)}<br>${esc(e.actor)} ― ${esc(e.text)}</div></div>`;
+    t.onclick = () => {
+      t.remove();
+      if (state.layout === 'A') state.tab = 'events';
+      state.highlight = e.id; render();
+      document.querySelector(`.ev[data-id="${e.id}"]`)?.scrollIntoView({ block: 'center' });
+      log('デスクトップ通知をクリックしました。本アプリが前面に出ます（F-08）。');
+      setTimeout(() => { state.highlight = null; render(); }, 2500);
+    };
+    $('#toasts').prepend(t);
+    setTimeout(() => t.remove(), 7000);
+  }
+
+  function restart() {
+    // しばらく時間がたったことにする（既存の出来事を3時間前にずらす）
+    events.forEach((e) => { e.at -= 3 * HOUR; e.missed = false; });
+    prs.forEach((p) => { p.updated -= 3 * HOUR; });
+    const missed = [
+      ev({ type: 'review_requested', repo: 'api-server', num: 351, title: '請求書 PDF の文字化けを修正', actor: 'tanaka', at: now() - 40 * MIN, text: 'あなたにレビューを依頼しました', missed: true }),
+      ev({ type: 'mention', kind: 'issue', repo: 'infra', num: 82, title: 'ディスク容量の監視', actor: 'sato', at: now() - 95 * MIN, text: '@you 夜間の閾値どうしますか', missed: true }),
+    ];
+    queued.filter((q) => q.missed).forEach((q) => { q.e.missed = true; q.e.at = now() - 30 * MIN; missed.push(q.e); if (q.p) prs.unshift(q.p); });
+    queued = queued.filter((q) => !q.missed);
+    events.push(...missed);
+    prs.unshift(pr({ repo: 'api-server', num: 351, title: '請求書 PDF の文字化けを修正', author: 'tanaka', state: 'open', updated: now() - 40 * MIN, reasons: ['review_pending'] }));
+    state.closed = false; state.lastReload = now(); state.lastReceived = now();
+    log(`立ち上げました。閉じていた間の出来事 ${missed.length} 件を一覧に載せました（デスクトップ通知は出していません）。PR の一覧も最新です。`);
+    render();
+  }
+
+  // ------------------------------------------------------------------
+  // つなぎこみ
+  // ------------------------------------------------------------------
+  $('#btnFire').onclick = fire;
+  $('#demoStatus').onchange = (x) => {
+    const prev = state.status; state.status = x.target.value;
+    if (state.status === 'ok' && prev !== 'ok') {
+      const q = queued.filter((v) => !v.missed); queued = queued.filter((v) => v.missed);
+      q.forEach(({ e, p }) => { events.push(e); if (p) pendingPRs.push(p); });
+      state.lastReceived = now();
+      log(`受け取れるようになりました。${q.length ? `受け取れなかった間の出来事 ${q.length} 件を一覧に載せました（デスクトップ通知は出していません）。` : ''}`);
+    } else if (state.status !== 'ok') {
+      log('受け取れない状態にしました。画面の上に理由が出ます。');
+    }
+    render();
+  };
+  document.querySelectorAll('[data-layout]').forEach((b) => b.onclick = () => { state.layout = b.dataset.layout; state.tab = state.layout === 'A' ? 'events' : 'lists'; render(); });
+  $('#optPrio').onchange = render;
+  $('#btnRestart').onclick = () => { state.closed = true; render(); log('ウィンドウを閉じました。アプリは終了し、受け取りも止まりました。'); };
+  $('#btnClose').onclick = () => { state.closed = true; render(); log('ウィンドウを閉じました。アプリは終了し、受け取りも止まりました。'); };
+  $('#btnMin').onclick = () => log('（モックアップ）最小化します。Dock・タスクバーに残り、受け取りは続きます。');
+  $('#btnUpdate').onclick = () => { state.update = true; render(); log('新しい版の知らせを出しました。'); };
+  $('#btnOnboard').onclick = () => { state.onboarding = true; render(); };
+
+  render();
+})();
+</script>
+</body>
+</html>

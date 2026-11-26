@@ -1,0 +1,36 @@
+%% github-inbox Container 図（⑧ アーキテクチャ設計（構造））
+%% 説明は container-overview.md を参照
+flowchart TB
+  U(("利用者"))
+
+  subgraph PC["利用者の PC（Mac / Windows）"]
+    subgraph APP["github-inbox（Electron アプリ）"]
+      R["画面（レンダラー）<br/>React + TypeScript<br/>出来事の一覧・PR の一覧・設定・初回認証"]
+      P["preload<br/>画面に出す関数だけを公開"]
+      MP["メインプロセス<br/>Node.js + TypeScript<br/>取り込み・PR 取得・デスクトップ通知<br/>認証・保存・自動起動・版の確認"]
+      ST[("手元の保存<br/>出来事・設定<br/>（形式は ⑩）")]
+      TK[("暗号化したトークン<br/>safeStorage")]
+    end
+    OS["OS<br/>通知・キーチェーン／DPAPI<br/>ログイン項目・クリップボード"]
+    BR["ブラウザ"]
+  end
+
+  subgraph GH["GitHub（github.com）"]
+    API["REST / GraphQL API<br/>通知・検索・PR の詳細"]
+    AUTH["OAuth デバイスフロー"]
+    REL["Releases<br/>（個人の public リポジトリ）"]
+    ACT["GitHub Actions<br/>Mac 用・Windows 用をビルド"]
+  end
+
+  U -->|"操作"| R
+  R <-->|"IPC（契約は ⑩.3）"| P
+  P <-->|"IPC"| MP
+  MP -->|"HTTPS（読み取り）"| API
+  MP -->|"HTTPS"| AUTH
+  MP -.->|"新しい版を確かめる（S）"| REL
+  MP --> ST
+  MP --> TK
+  MP -->|"Electron の API"| OS
+  MP -->|"URL を開く"| BR
+  ACT -->|"配布物を置く"| REL
+  U -->|"ダウンロード"| REL

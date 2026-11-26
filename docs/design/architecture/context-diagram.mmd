@@ -1,0 +1,25 @@
+%% github-inbox Context 図（⑦ アーキテクチャ設計（全体像））
+%% 説明は context-overview.md を参照
+flowchart TB
+  U(("利用者<br/>依頼者・チームの希望者"))
+  D(("配布担当<br/>依頼者"))
+  M(("チームメンバー<br/>本アプリは触らない"))
+
+  subgraph PC["利用者の PC（Mac / Windows）"]
+    APP["github-inbox<br/>本システム（デスクトップアプリ）"]
+    OS["OS<br/>デスクトップ通知・認証情報の保管<br/>自動起動・クリップボード・アプリの切り替え"]
+    BR["ブラウザ"]
+  end
+
+  GH["GitHub（github.com）<br/>通知・検索・PR／issue／CI・認証"]
+  DIST["配布場所<br/>GitHub Releases（ADR-005）"]
+
+  U -->|"見る・操作する"| APP
+  APP -->|"通知・検索・PR の詳細を読む<br/>（HTTPS・読み取りのみ）"| GH
+  APP -->|"デスクトップ通知・認証情報の保管<br/>自動起動・リンクのコピー"| OS
+  APP -->|"GitHub のページを開く"| BR
+  BR -->|"利用者が対応する"| GH
+  M -->|"PR・レビュー・コメント<br/>メンション・アサイン"| GH
+  D -->|"配布物と短い説明を置く"| DIST
+  U -->|"ダウンロードする"| DIST
+  APP -.->|"新しい版を確かめる（S）"| DIST

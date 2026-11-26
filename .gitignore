@@ -1,0 +1,12 @@
+node_modules/
+out/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+# 禁止語リスト（security-rules.md 2.）。中身は技術者が書く。コミットしない
+.forbidden-words
+# 各自の Claude Code の設定
+.claude/settings.local.json
