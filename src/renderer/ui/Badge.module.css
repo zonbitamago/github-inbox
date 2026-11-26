@@ -1,0 +1,9 @@
+.badge {
+  display: inline-block;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-badge-neutral-bg);
+  color: var(--color-badge-neutral-fg);
+  font: var(--font-badge);
+  white-space: nowrap;
+}
