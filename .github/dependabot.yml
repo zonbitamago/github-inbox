@@ -5,6 +5,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # メジャー版を見送るもの（security-rules.md S-11。⑬ で技術者が決めた）。脆弱性の修正は見送りの対象外
+    ignore:
+      # アプリの中で動く Node.js は Electron 45 の 24 系。型だけ新しくすると、無い機能を使えてしまう。
+      # Electron のメジャー版を上げて Node.js の系統が変わるときに、ここも直す
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # eslint-plugin-react が ESLint 10 に対応するまで（対応したら外す）
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
