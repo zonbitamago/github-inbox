@@ -1,0 +1,8 @@
+out/
+dist/
+coverage/
+node_modules/
+package-lock.json
+# 文書は Prettier で整えない（表の桁を揃え直して差分が大きくなるため）
+docs/
+*.md
