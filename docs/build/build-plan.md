@@ -83,7 +83,7 @@ flowchart LR
 
 | # | 中身 | 触るフォルダ | 要件 | テスト | 手動・実データ |
 | --- | --- | --- | --- | --- | --- |
-| S1 骨格 | 保存（json-file・events-store・settings-store、30日で消す、壊れたときの退避）、ログ、窓1つ・閉じたら終了・二重に立ち上げない、preload、IPC の受け口（`app:getState` など）、画面の殻（App の切り替え・main-store・一覧の殻）。保存済みの出来事を先に出す（component-backend.md 5.1） | `src/main/{store,log,app/window.ts,ipc}`、`src/preload`、`src/renderer/{App.tsx,main-store,pages/main,ui}` | F-06・F-24・N-10、I-1・I-4・I-5 | 単体（保存・30日）、結合M（壊れたファイル）、結合R（殻） | 立ち上がって、手で置いた架空の `events.json` が一覧に出る |
+| S1 骨格 | 保存（json-file・events-store・settings-store、30日で消す、壊れたときの退避）、ログ、窓1つ・閉じたら終了・二重に立ち上げない、preload、IPC の受け口（`app:getState` など）、画面の殻（App の切り替え・main-store・一覧の殻）。保存済みの出来事を先に出す（component-backend.md 5.1） | `src/main/{store,log,app/window.ts,ipc}`、`src/preload`、`src/renderer/{App.tsx,main-store,pages/main,ui}` | F-06・F-24・N-10、I-1・I-4・I-5 | 単体（保存・30日）、結合M（壊れたファイル）、結合R（殻） | 立ち上がって、手で置いた架空の `events.json` が一覧に出る（⑭ S1 で確かめた: サインインしていない間は使い始めの案内が出るため、出来事の一覧は画面の結合のテストと `events:list` の応答で確かめた。2つめの立ち上げはすぐ終わり、窓を閉じたら終了した） |
 | S2 認証 | デバイスフロー・PAT・トークンの保存（safeStorage の非同期版）・版が変わったときのキーチェーンの案内・`GET /user`・サインアウト。使い始めの案内の手順2。github/client と rate-budget | `src/main/{auth,github/client.ts,github/rate-budget.ts,github/viewer.ts,github/device-flow-client.ts}`、`src/renderer/{pages/keychain-notice,pages/onboarding,features/auth}` | F-27・F-28・F-36 (2)(5)・N-05 | 単体（スコープの確認・トークンの形）、結合M（デバイスフローの各応答）、結合R | 依頼者のアカウントでサインインする。前提: 5. の 0-4・0-5 |
 | S3 出来事 | GitHub の通知の問い合わせ（If-Modified-Since・X-Poll-Interval）、GraphQL での分解、CI の結果、取り戻し、受け取りの状態、出来事の一覧・絞り込み・状態の帯 | `src/main/{ingest,github/notifications.ts,github/timeline.ts,github/workflow-runs.ts}`、`src/renderer/features/{event-list,status}` | F-01〜F-06・F-11〜F-13・N-01・N-04・N-07・N-08 | 結合M（模擬の GitHub。失敗・取り戻し・回数）、結合R | 依頼者の実データで種類ごとに出るか（R-04）。CI の結果は 0-7 の後 |
 | S4 デスクトップ通知 | Notification、クリックで前面と出来事の強調（`ui:focusEvent`）、失敗の判定と帯 | `src/main/notify`、`src/renderer/features/event-list`（強調だけ） | F-07・F-08・N-09 | 結合M（出す・出さない） | アプリケーションフォルダに置いたビルドで、出る・クリックで前面に出る |
@@ -181,6 +181,12 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | B3 `core/expand-thread.ts` | 分解の範囲は「since ちょうど」を含む | 重なり（5分）で重複しても、id で1件に重なる（I-1） |
 | B3 `core/waiting-reasons.ts` | 作者が消えた PR も `ghost` | 上と同じ |
 | B3 `core/expand-workflow-runs.ts` | CI の出来事の対象のタイトルは「ワークフロー名: 表示のタイトル（ブランチ）」 | github-api.md 4. は使う項目だけを決めていた。一覧の1行で、どのワークフローのどの変更かが分かるように |
+| S1 `store/events-store.ts` | `events.json` の中の形（component-backend.md 7.）。同じ id の出来事は先に受け取ったものを残す。ファイルは字下げしない | 受け取った時刻とデスクトップ通知の判定が、後から変わらないように |
+| S1 `store/settings-store.ts` | 足りない項目は既定値で補い、知らない項目は壊れたものとして退避する。無いときは変えるまでファイルを作らない | 前の版で保存したファイルも読めるように |
+| S1 `log/logger.ts` | ファイルの日付は UTC。書けなかった回数を数える | ログに書けない失敗は、ほかに知らせる先が無いため |
+| S1 `app/window.ts` | 配布物のメニューは、Mac はアプリ・編集・窓、Windows は出さない | 再読み込みと開発者ツールを外し、Mac のコピー・貼り付けは残すため |
+| S1 `index.ts` | 開発サーバーの URL は配布物では見ない | security-rules.md S-03 に書いた |
+| S1 `renderer` | 言語の仕組み（i18n）の土台を S1 で作った（計画では S6）。使い始めの案内は仮の画面。最初の値を取れなければ「開き直してください」と出す | 文言を部品に直接書かない決まり（coding-standards.md 4.）を S1 から守るため |
 
 ## 9. ⑮ への申し送り
 

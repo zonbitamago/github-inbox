@@ -110,12 +110,12 @@
 src/renderer/
   main.tsx              入口
   App.tsx               1. の画面の切り替え
-  main-store/           メインから届く状態（useSyncExternalStore）
+  main-store/           メインから届く状態（main-store.ts。useSyncExternalStore で読む use-main-store.tsx）。最初の値を取れなければ loadFailed を持ち、「開き直してください」と出す（⑭ S1）
   pages/                keychain-notice/ onboarding/ main/ settings/
   features/             event-list/ pr-list/ status/ auth/ onboarding/ settings/
   ui/                   2.3 の部品
-  i18n/                 ja.ts en.ts
-  styles/               design-system.md の値（CSS の変数）
+  i18n/                 ja.ts en.ts（キーを型で縛る）・index.ts（translate・useT）・format.ts（日時の表示）
+  styles/               design-system.md の値（tokens.css）と、全体の地（base.css。トークンだけを使う）
 ```
 
 - 絞り込みの関数（`filterEvents`・`filterPrs`）と表示の整形は、部品から切り離した関数にして単体テストを書く（test-strategy.md 2.）

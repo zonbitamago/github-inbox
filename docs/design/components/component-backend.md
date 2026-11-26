@@ -111,13 +111,14 @@ src/
       events-store.ts       出来事と取り込みの記録（30日で消す）
       settings-store.ts     設定（既定値を補う）
     app/
-      window.ts             窓を1つだけ作る。閉じたら終了（F-24）。二重に立ち上げない
+      window.ts             窓を1つだけ作る・メニュー（配布物では再読み込みと開発者ツールを外す）。閉じたら終了と二重の立ち上げの防止は index.ts（F-24）
+      app-state.ts          画面に渡す状態（AppState）を組み立て、変わったら state:changed を送る（⑭ S1）
       login-item.ts         自動起動（F-25）
       applications-folder.ts  アプリケーションフォルダへの移動（F-36 (1)、Mac）
       update-check.ts       新しい版の確認（F-31）
       external.ts           ブラウザで開く・クリップボード（URL の検査を通す）
     ipc/
-      handlers.ts           ipc-contract.md の受け口。入力を zod で検査してから各部品へ
+      handlers.ts           ipc-contract.md の受け口。送り主の確認と、入力を zod で検査してから各部品へ。画面への知らせ（契約に合わないものは送らない）
     log/
       logger.ts             ログ（Q-15）
   preload/
@@ -269,6 +270,15 @@ sequenceDiagram
 - **消し方**: 立ち上げ時と24時間ごとに、発生から30日を過ぎた出来事を消す（N-10、AC-40）。取り込みの記録も、30日を過ぎて動きが無いスレッドのものは消す
 - **書く回数**: 取り込みで出来事が増えたときと、設定を変えたときだけ書く。304 のときは書かない
 - 退避したファイルは、7日で消す（AI案）
+- ファイルは1行の JSON（字下げしない。大きくなる出来事のため）。⑭ S1 で決めた中身の形（`src/main/store/events-store.ts` の zod のスキーマが正）:
+
+| ファイル | 項目 | 中身 |
+| --- | --- | --- |
+| `events.json` | `schemaVersion` | 1 |
+| | `events` | 出来事（domain-model.md 2. の `GitHubEvent`）。同じ id は1件で、先に受け取ったものを残す（I-1） |
+| | `notifications` | GitHub の通知の問い合わせの記録: `etag`（前回の応答の ETag。CR-003）・`lastSuccessAt`（前回の成功の時刻） |
+| | `threads` | スレッドの id ごとの取り込みの記録: `reason`（最新の理由）・`updatedAt`（スレッドの更新時刻。30日動きが無いかの判定）・`expandedUntil`（分解した時刻）・`participating`（参加中。戻さない）・`consecutiveFailures`（続けて失敗した回数） |
+| `settings.json` | 設定（domain-model.md 2. の `Settings`） | 足りない項目は既定値で補う。知らない項目・範囲の外の値があれば壊れたものとして退避する。無いときは、変えるまでファイルを作らない |
 
 ---
 
