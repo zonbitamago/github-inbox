@@ -9,7 +9,8 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 
 const TOKEN = /\b(gh[opsur]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/
-const NOREPLY = /@users\.noreply\.github\.com$/
+// 利用者の noreply と、GitHub の画面でマージしたときのコミッター（GitHub 自身の noreply@github.com）
+const NOREPLY = /(@users\.noreply\.github\.com|^noreply@github\.com)$/
 
 function git(args: string[]): string {
   try {
