@@ -2,7 +2,7 @@
 
 実際の応答を読み取りだけで記録し、架空のデータに置き換えたもの（test-conventions.md 3.、security-rules.md S-10）。**推測で作らない**。
 
-- 記録した日: 2026-11-26（⑬ B2）。日時は「記録の30日前 = 2026-01-01T00:00:00Z」になるようにずらしてある（間隔は実際のまま）
+- 記録した日: 2026-11-26（⑬ B2。CI の2件は 0-7）。日時は「記録の30日前 = 2026-01-01T00:00:00Z」になるようにずらしてある（間隔は実際のまま）。CI の2件だけは、ワークフロー実行の絞り込みの日（記録の前の日）が 2026-01-01 になるようにずらしてある
 - 記録の道具: `scripts/fixtures/record.ts`（生の応答はリポジトリの外に置く）
 - 置き換えの道具: `scripts/fixtures/anonymize.ts`（置き換えの対応表はリポジトリの外に置く。生の文字列が残っていたら書かずに止まる）
 - 利用者は `alice`。他の人は `bob`・`carol`・`dave`… の順、bot は `example-bot`・`example-bot-2`…、組織は `example-org`、リポジトリは `example-org/app`・`example-org/api`…
@@ -24,12 +24,13 @@
 | `rest-latest-comment-pr-body.json` | M-9 の出典（CR-004）。`latest_comment_url` が PR そのものを指すとき（本文に `@alice`） | M-9 |
 | `rest-latest-comment-issue-body.json` | 同じく issue そのもの（bot が作った issue。本文に `@alice`） | M-9、bot |
 | `rest-latest-comment-issue-comment.json` | 同じく issue のコメント（PR の会話のコメント。`@alice`） | M-9 |
+| `notifications-repo-ci-activity.json` | `GET /repos/{owner}/{repo}/notifications?all=true`（本リポジトリ。架空の名前では `alice/tools`）。`ci_activity` のスレッド1件（種類 `CheckSuite`、`subject.url` は空）と、PR の状態の変化 | CI（S3） |
+| `rest-workflow-runs.json` | `GET /repos/{owner}/{repo}/actions/runs?actor=…&status=completed&created=>=…`（github-api.md 4.）。11件。利用者の push・PR の実行、やり直し（`run_attempt` 2）、`actor` で絞っても返ってくる bot の実行 | CI の分解（`expand-workflow-runs`） |
 
 ## まだ無い場面（起きたときに記録する。それまではテストの中で書き換えて使い、テストに「書き換えた応答」と書く。DR-16）
 
 | 場面 | 状態 |
 | --- | --- |
-| `ci_activity` の GitHub の通知と、ワークフロー実行（github-api.md 4.） | 本リポジトリの CI を動かした後に記録する（build-plan.md 5. の 0-7、R-05）。2026-11-26 の時点では、成功した CI では GitHub の通知が届かなかった（既定の設定のため） |
 | チーム宛てのレビュー依頼（`requestedReviewer` が `Team`） | 依頼者の直近30日のデータに無かった |
 | M-9（理由が `mention` なのに、本文に `@利用者` が無い） | 出典（最新のコメント）の応答は記録した。分解の応答（M-9 に当たるスレッドのもの）は記録していないため、テストで書き換える |
 | 取り消されたレビュー（DISMISSED） | 記録に無い。テストで書き換える（CR-005） |

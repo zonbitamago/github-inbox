@@ -148,6 +148,19 @@ const SAFE_STRINGS = new Set([
   'core',
   'search',
   'GET',
+  // ブランチ名・ワークフロー名のうち、一般的な語
+  'main',
+  'master',
+  'ci',
+  // GitHub Actions の event・status
+  'pull_request',
+  'dynamic',
+  'workflow_dispatch',
+  'schedule',
+  'queued',
+  'in_progress',
+  'requested',
+  'waiting',
   'POST',
 ])
 /** キーごとに、値をそのまま残すもの */
@@ -544,8 +557,17 @@ function mapUrl(mapping: Mapping, original: string): string {
   const params = new URLSearchParams(url.search)
   const mappedParams = new URLSearchParams()
   for (const [name, param] of params) {
+    const dateOnly = /^(>=|<=|>|<)?(\d{4}-\d{2}-\d{2})$/.exec(param)
     if (ISO.test(param)) mappedParams.set(name, shiftTime(mapping, param))
-    else if (/^(all|per_page|page|v|participating|s)$/.test(name)) mappedParams.set(name, param)
+    else if (dateOnly !== null)
+      // created=>=2026-11-25 のような日付だけの条件（github-api.md 4.）
+      mappedParams.set(
+        name,
+        `${dateOnly[1] ?? ''}${shiftTime(mapping, `${dateOnly[2] ?? ''}T00:00:00Z`).slice(0, 10)}`,
+      )
+    else if (name === 'actor') mappedParams.set(name, mapLogin(mapping, param, false))
+    else if (/^(all|per_page|page|v|participating|s)$/.test(name) || SAFE_STRINGS.has(param))
+      mappedParams.set(name, param)
     else mappedParams.set(name, 'example')
   }
   const search = mappedParams.toString()
@@ -666,7 +688,8 @@ function transform(
     )
   }
   if ((key === 'id' || key.endsWith('_id')) && /^\d+$/.test(value)) return mapNumber(mapping, value)
-  if (key === 'id' || key === 'node_id' || key.endsWith('Id')) return mapId(mapping, value)
+  if (key === 'id' || key === 'node_id' || key.endsWith('_node_id') || key.endsWith('Id'))
+    return mapId(mapping, value)
   if (/^https?:\/\//.test(value)) return mapUrl(mapping, value)
   if (key === 'full_name' || key === 'nameWithOwner') {
     const [owner = '', name = ''] = value.split('/')

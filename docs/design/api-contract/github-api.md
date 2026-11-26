@@ -129,7 +129,12 @@ fragment IssueExpand on Issue {
 | `updated_at` | 発生の時刻。取り込みの記録より新しいものだけ |
 | `triggering_actor.login` | 利用者と同じものだけ（再実行を含め、利用者が起動したもの） |
 
-- `ci_activity` のスレッドの形は依頼者のデータで確かめられていない（直近で0件）。本リポジトリの CI の実行で届くものを記録する（domain-model.md 10. 要確認 2、DR-16）
+- ⑬ で本リポジトリの CI の実行で届いたものを記録して確かめた（domain-model.md 10. 要確認 2、R-05。`test/fixtures/github/notifications-repo-ci-activity.json`・`rest-workflow-runs.json`）
+  - `ci_activity` のスレッドは、種類が `CheckSuite` で、`subject.url` と `latest_comment_url` はどちらも空。どの実行かはスレッドから分からないため、リポジトリのワークフロー実行を上の問い合わせで取る
+  - **`actor` の絞り込みは効かない**（Dependabot が起動した実行も返ってきた）。出来事にするかは `triggering_actor.login` で手元で決める
+  - やり直すと `run_attempt` が増え、`updated_at` だけが新しくなる（`created_at` は最初の実行のまま）。作られた日付で `since` の前の日から絞るため、**作られてから1日を超えた実行のやり直しは拾えない**（まれな場面として受け入れる。R-05）
+  - 届くのは、利用者が GitHub の通知の設定で Actions を「on GitHub」にし、「Only notify for failed workflows」を外しているときだけ（⑬ で技術者の設定で確かめた。F-36 (3)、ADR-002）
+  - 対象のタイトルは「ワークフロー名: 表示のタイトル（ブランチ）」（⑬ で AI が決めた。build-plan.md 8.）
 
 ---
 

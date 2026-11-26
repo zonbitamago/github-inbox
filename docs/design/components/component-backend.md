@@ -76,6 +76,7 @@ src/
     index.ts              組み立て（部品を作ってつなぐ）と立ち上げの順番
     core/                 純粋な関数 ← barrier
       expand-thread.ts      スレッド → 出来事（domain-model 4.1）
+      expand-workflow-runs.ts  ci_activity のスレッドのワークフロー実行 → CI の出来事（github-api.md 4.。⑬ B3）
       participation.ts      参加中の判定（4.2）
       waiting-reasons.ts    自分待ちの理由（4.3）
       should-notify.ts      デスクトップ通知を出すか（4.4）
@@ -198,7 +199,7 @@ sequenceDiagram
 1. `scheduler` が時刻を知らせる（間隔は 6.1）
 2. `github/notifications` で `GET /notifications?all=true&since=…`（`If-None-Match` に前回の `ETag`。CR-003）。304 なら終わり
 3. 理由で分解するスレッドを選び（domain-model 4.1）、スレッドの更新時刻が取り込みの記録より新しいものだけを残す
-4. PR・issue のスレッドは `github/timeline` でまとめて取る（1回に20スレッドまで。github-api.md 3.。PR のレビューは `reviews` の一覧から。CR-002）。CI のスレッドは `github/workflow-runs`
+4. PR・issue のスレッドは `github/timeline` でまとめて取る（1回に20スレッドまで。github-api.md 3.。PR のレビューは `reviews` の一覧から。CR-002）。CI のスレッドは `github/workflow-runs` で取り、`core/expand-workflow-runs` で出来事にする
 5. `core/expand-thread` で出来事にする。M-9 に当たったスレッド（`needsMentionFallback`）は、`subject.latest_comment_url` を読んで `core/expand-thread` の `mentionFallbackEvent`に渡す（CR-004）
 6. `store/events-store` に出来事と取り込みの記録を**同じ書き込みで**保存する（I-5）
 7. 保存できた出来事のうち、`core/should-notify` が真のものを `notify` に渡す

@@ -107,3 +107,22 @@ export interface GhSearchPullRequestStatus {
   latestOpinionatedReviews: { nodes: { state: string }[] }
   commits: { nodes: { commit: { statusCheckRollup: { state: string } | null } }[] }
 }
+
+/** ワークフロー実行（REST の actions/runs の1件。github-api.md 4.）。CI の結果の分解の材料 */
+export interface GhWorkflowRun {
+  node_id: string
+  /** やり直すと増える */
+  run_attempt: number
+  name: string | null
+  display_title: string
+  head_branch: string | null
+  html_url: string
+  /** completed など */
+  status: string
+  /** 完了していなければ null。値は GitHub のまま（business-data.md 2.3） */
+  conclusion: string | null
+  /** やり直すと新しくなる（created_at は最初の実行のまま） */
+  updated_at: string
+  /** 起動した人。actions/runs の actor の絞り込みは効かないため、これで絞る（⑬ で確かめた） */
+  triggering_actor: { login: string; type: string } | null
+}

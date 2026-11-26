@@ -8,6 +8,8 @@
 //     GitHub の通知・利用者・所属チーム・PR の検索3本を記録し、通知の PR・issue をまとめて分解して、形だけを出す
 //   node scripts/fixtures/record.ts notifications <生の応答を置くフォルダ>
 //     GitHub の通知と 304 だけを記録し直す
+//   node scripts/fixtures/record.ts ci <生の応答を置くフォルダ> <owner/name>
+//     そのリポジトリの GitHub の通知（ci_activity を含む）と、利用者が起動した完了済みのワークフロー実行を記録する（github-api.md 4.。R-05）
 //   node scripts/fixtures/record.ts latest-comment <生の応答を置くフォルダ> <名前> <スレッドの番号>
 //     GitHub の通知の subject.latest_comment_url を読み、<名前>.json に記録する（M-9 の出典。CR-004）
 //   node scripts/fixtures/record.ts expand <生の応答を置くフォルダ> <名前> <since> <スレッドの番号（survey の出力の #）>...
@@ -504,6 +506,42 @@ function expand(
   console.log(`${name}: status ${recorded.response.status}、errors ${body.errors?.length ?? 0} 件`)
 }
 
+// ---- ci（CI の結果。github-api.md 4.、R-05） ----
+
+function recordCi(dir: string, repository: string | undefined): void {
+  if (repository === undefined || !/^[^/]+\/[^/]+$/.test(repository)) {
+    throw new SafeError('owner/name を指定する')
+  }
+  const viewerRecord = ghGet('/user')
+  save(dir, 'user', viewerRecord)
+  const viewer = (viewerRecord.response.body as { login: string }).login
+  const notifications = ghGet(`/repos/${repository}/notifications?all=true&per_page=50`)
+  save(dir, 'ci-notifications', notifications)
+  const threads = notifications.response.body as NotificationThread[]
+  const ci = threads.filter((thread) => thread.reason === 'ci_activity')
+  // 作られた日付で絞るのは since の前の日から（github-api.md 4.。DR-09）
+  const since = ci.map((thread) => thread.updated_at).sort()[0] ?? new Date().toISOString()
+  const from = new Date(Date.parse(since) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const runs = ghGet(
+    `/repos/${repository}/actions/runs?actor=${viewer}&status=completed&created=%3E%3D${from}&per_page=100`,
+  )
+  save(dir, 'ci-workflow-runs', runs)
+  const body = runs.response.body as {
+    total_count: number
+    workflow_runs: { run_attempt: number; conclusion: string | null }[]
+  }
+  console.log(
+    `GitHub の通知: ${threads.length} 件（ci_activity ${ci.length} 件。種類 ${JSON.stringify(countBy(ci, (t) => t.subject.type))}、subject.url が空 ${ci.filter((t) => t.subject.url === null).length} 件）`,
+  )
+  console.log(
+    `ワークフロー実行: ${body.workflow_runs.length} 件（結果 ${JSON.stringify(countBy(body.workflow_runs, (r) => r.conclusion ?? 'null'))}、やり直し ${body.workflow_runs.filter((r) => r.run_attempt > 1).length} 件）`,
+  )
+  writeFileSync(
+    join(dir, 'survey-meta.json'),
+    `${JSON.stringify({ viewer, since: `${from}T00:00:00Z`, subjects: [] }, null, 2)}\n`,
+  )
+}
+
 // ---- latest-comment（M-9 の出典。CR-004） ----
 
 function latestComment(dir: string, name: string | undefined, index: string | undefined): void {
@@ -546,6 +584,8 @@ function main(): void {
     recordNotifications(dir)
   } else if (command === 'expand') {
     expand(dir, rest[0], rest[1], rest.slice(2))
+  } else if (command === 'ci') {
+    recordCi(dir, rest[0])
   } else if (command === 'latest-comment') {
     latestComment(dir, rest[0], rest[1])
   } else {
