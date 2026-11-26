@@ -1,0 +1,1006 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/graphql",
+    "body": {
+      "query": "query Expand($since: DateTime!, $o0: String!, $r0: String!, $n0: Int!, $o1: String!, $r1: String!, $n1: Int!, $o2: String!, $r2: String!, $n2: Int!, $o3: String!, $r3: String!, $n3: Int!) {\n  rateLimit { cost remaining resetAt }\n  t0: repository(owner: $o0, name: $r0) {\n    pullRequest(number: $n0) { ...PrExpand }\n  }\n  t1: repository(owner: $o1, name: $r1) {\n    pullRequest(number: $n1) { ...PrExpand }\n  }\n  t2: repository(owner: $o2, name: $r2) {\n    issue(number: $n2) { ...IssueExpand }\n  }\n  t3: repository(owner: $o3, name: $r3) {\n    pullRequest(number: $n3) { ...PrExpand }\n  }\n}\n\nfragment PrExpand on PullRequest {\n  id number title url state isDraft createdAt body\n  author { login __typename }\n  viewerLatestReview { state }\n  timelineItems(since: $since, first: 100,\n    itemTypes: [ISSUE_COMMENT, REVIEW_REQUESTED_EVENT, ASSIGNED_EVENT]) {\n    pageInfo { hasNextPage endCursor }\n    nodes {\n      __typename\n      ... on IssueComment { id url createdAt body author { login __typename } }\n      ... on ReviewRequestedEvent {\n        id createdAt actor { login __typename }\n        requestedReviewer { __typename ... on User { login } }\n      }\n      ... on AssignedEvent {\n        id createdAt actor { login __typename }\n        assignee { __typename ... on User { login } }\n      }\n    }\n  }\n  reviews(last: 50) {\n    pageInfo { hasPreviousPage startCursor }\n    nodes {\n      id url state createdAt submittedAt body author { login __typename }\n      comments(first: 20) { nodes { url body replyTo { id } } }\n    }\n  }\n}\n\nfragment IssueExpand on Issue {\n  id number title url state createdAt body\n  author { login __typename }\n  timelineItems(since: $since, first: 100, itemTypes: [ISSUE_COMMENT, ASSIGNED_EVENT]) {\n    pageInfo { hasNextPage endCursor }\n    nodes {\n      __typename\n      ... on IssueComment { id url createdAt body author { login __typename } }\n      ... on AssignedEvent {\n        id createdAt actor { login __typename }\n        assignee { __typename ... on User { login } }\n      }\n    }\n  }\n}\n",
+      "variables": {
+        "since": "2026-01-01T00:00:00Z",
+        "o0": "example-org",
+        "r0": "api",
+        "n0": 102,
+        "o1": "example-org",
+        "r1": "api",
+        "n1": 106,
+        "o2": "example-org",
+        "r2": "docs",
+        "n2": 120,
+        "o3": "example-org",
+        "r3": "app",
+        "n3": 149
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4970",
+      "x-ratelimit-reset": "1769821269",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "30"
+    },
+    "body": {
+      "data": {
+        "rateLimit": {
+          "cost": 2,
+          "remaining": 4970,
+          "resetAt": "2026-01-31T01:01:09Z"
+        },
+        "t0": {
+          "pullRequest": {
+            "id": "PR_PNzEsvGAW_CiRMG4JwN5XZ",
+            "number": 102,
+            "title": "一覧の並び順を更新日時にする",
+            "url": "https://github.com/example-org/api/pull/102",
+            "state": "OPEN",
+            "isDraft": false,
+            "createdAt": "2026-01-28T21:52:47Z",
+            "body": "## この名前のほうが分かりやすいと思います。\n\n了解です。\n\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n\n## 念のため確認させてください。",
+            "author": {
+              "login": "frank",
+              "__typename": "User"
+            },
+            "viewerLatestReview": {
+              "state": "COMMENTED"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_5VGtSpHjNRMkUTb4XTHD-E622JAJZmgXgQ",
+                  "createdAt": "2026-01-28T21:52:50Z",
+                  "actor": {
+                    "login": "frank",
+                    "__typename": "User"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "frank"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_AO9i2zJQHqbNXkj2aypfrT",
+                  "url": "https://github.com/example-org/api/pull/102#issuecomment-4627957015",
+                  "createdAt": "2026-01-28T21:53:21Z",
+                  "body": "### ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\nテストを足しておきます。\nこの名前のほうが分かりやすいと思います。\n了解です。\n手元で動くことを確かめました。\nこちらは別の PR で対応します。",
+                  "author": {
+                    "login": "example-bot",
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_9H9metFOhDQ7Q0XXfflNAu",
+                  "url": "https://github.com/example-org/api/pull/102#issuecomment-5367045379",
+                  "createdAt": "2026-01-28T21:54:57Z",
+                  "body": "念のため確認させてください。\n### ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\nテストを足しておきます。\nこの名前のほうが分かりやすいと思います。\n了解です。\n手元で動くことを確かめました。",
+                  "author": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_48UADHa--jH6R9w9tBkk0gHZ18qJPH0mZH",
+                  "createdAt": "2026-01-30T18:05:34Z",
+                  "actor": {
+                    "login": "frank",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_Iwu0ArIZ9OrSzTLOcKiPF29fq5g_fneqfz",
+                  "createdAt": "2026-01-30T18:05:42Z",
+                  "actor": {
+                    "login": "frank",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "erin"
+                  }
+                }
+              ]
+            },
+            "reviews": {
+              "pageInfo": {
+                "hasPreviousPage": false,
+                "startCursor": "example"
+              },
+              "nodes": [
+                {
+                  "id": "PRR_8kaxZiWM8Yznx9oDgeXVeu",
+                  "url": "https://github.com/example-org/api/pull/102#pullrequestreview-6879374946",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T22:30:00Z",
+                  "submittedAt": "2026-01-30T22:29:59Z",
+                  "body": "@frank こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r7762865175",
+                        "body": "@frank 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r8352030947",
+                        "body": "@frank 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n- 手元で動くことを確かめました。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r9119368521",
+                        "body": "@frank こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n\nテストを足しておきます。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r1149724170",
+                        "body": "@frank この名前のほうが分かりやすいと思います。\n\n了解です。\n\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r2621833801",
+                        "body": "@frank ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r3043539996",
+                        "body": "@frank 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r4826448844",
+                        "body": "@frank テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r5893007214",
+                        "body": "@frank 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r6380251319",
+                        "body": "@frank 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r7917667282",
+                        "body": "@frank 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n- 手元で動くことを確かめました。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r8489812095",
+                        "body": "@frank こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n\nテストを足しておきます。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r9503551780",
+                        "body": "@frank この名前のほうが分かりやすいと思います。\n\n了解です。\n\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n\n念のため確認させてください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r1154473464",
+                        "body": "@frank ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r2325725732",
+                        "body": "@frank 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r3335935017",
+                        "body": "@frank テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r4079640520",
+                        "body": "@frank 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r5629369918",
+                        "body": "@frank 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r6866718440",
+                        "body": "@frank 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n\n手元で動くことを確かめました。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r7056546764",
+                        "body": "@frank こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n\nテストを足しておきます。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/102#discussion_r8184659705",
+                        "body": "@frank この名前のほうが分かりやすいと思います。\n\n了解です。\n\n手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "t1": {
+          "pullRequest": {
+            "id": "PR_wTJCTNdjwmAtLQ-Gp_c3-_",
+            "number": 106,
+            "title": "依存パッケージを更新する",
+            "url": "https://github.com/example-org/api/pull/106",
+            "state": "OPEN",
+            "isDraft": false,
+            "createdAt": "2026-01-29T22:31:45Z",
+            "body": "# 念のため確認させてください。\n\n## ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\nテストを足しておきます。\n",
+            "author": {
+              "login": "bob",
+              "__typename": "User"
+            },
+            "viewerLatestReview": {
+              "state": "COMMENTED"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_1YgHZ0rF5fge1mTZblEcHAyhRxQUWWGqxS",
+                  "createdAt": "2026-01-29T22:31:48Z",
+                  "actor": {
+                    "login": "bob",
+                    "__typename": "User"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "bob"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_DMHCZhEyPB09PigHuP1SYs",
+                  "url": "https://github.com/example-org/api/pull/106#issuecomment-9389115427",
+                  "createdAt": "2026-01-30T01:34:35Z",
+                  "body": "## この名前のほうが分かりやすいと思います。\n\n了解です。\n\n### 手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。",
+                  "author": {
+                    "login": "bob",
+                    "__typename": "User"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_EWTJhwpDohaP1zlVepNkDGvrGJ7HSrr35H",
+                  "createdAt": "2026-01-30T01:38:27Z",
+                  "actor": {
+                    "login": "bob",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_W1l8MqfRtgm1OEfEIZsLPO",
+                  "url": "https://github.com/example-org/api/pull/106#issuecomment-4732979136",
+                  "createdAt": "2026-01-30T19:41:36Z",
+                  "body": "@alice ここの条件は逆ではないでしょうか。\n直しました。もう一度見てください。\n\nテストを足しておきます。\n\n### この名前のほうが分かりやすいと思います。\n\n* 了解です。",
+                  "author": {
+                    "login": "bob",
+                    "__typename": "User"
+                  }
+                }
+              ]
+            },
+            "reviews": {
+              "pageInfo": {
+                "hasPreviousPage": false,
+                "startCursor": "example"
+              },
+              "nodes": [
+                {
+                  "id": "PRR_gyyA1c1HPukB4u3YfDVqA1",
+                  "url": "https://github.com/example-org/api/pull/106#pullrequestreview-1553182044",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T18:57:15Z",
+                  "submittedAt": "2026-01-30T18:57:14Z",
+                  "body": "@bob 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n念のため確認させてください。\n\n1. ここの条件は逆ではないでしょうか。\n   - 直しました。もう一度見てください。",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r2417577704",
+                        "body": "@bob テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r3680928184",
+                        "body": "@bob 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r4860764255",
+                        "body": "@bob 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r5916160584",
+                        "body": "@bob 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n- 手元で動くことを確かめました。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r6346140446",
+                        "body": "@bob こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r7582279248",
+                        "body": "@bob この名前のほうが分かりやすいと思います。\n\n了解です。\n\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r8371358943",
+                        "body": "@bob ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r9844938438",
+                        "body": "@bob 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r1062195999",
+                        "body": "@bob テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r2839575332",
+                        "body": "@bob 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r3442556339",
+                        "body": "@bob 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r4311489352",
+                        "body": "@bob 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n\n手元で動くことを確かめました。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r5372590844",
+                        "body": "@bob こちらは別の PR で対応します。\n\n念のため確認させてください。\n\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n\nテストを足しておきます。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r6121300526",
+                        "body": "@bob この名前のほうが分かりやすいと思います。\n\n了解です。\n\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n\n念のため確認させてください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r7375545786",
+                        "body": "@bob ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r8999735504",
+                        "body": "@bob 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r9748094647",
+                        "body": "@bob テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r1389889512",
+                        "body": "@bob 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r2762348304",
+                        "body": "@bob 了解です。\n\n手元で動くことを確かめました。\n\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/api/pull/106#discussion_r3023789828",
+                        "body": "@bob 直しました。もう一度見てください。\n\nテストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。\n\n手元で動くことを確かめました。",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "t2": {
+          "issue": {
+            "id": "I_ctYj8wE89zDrde2feH6rD9",
+            "number": 120,
+            "title": "テストの名前を揃える（2）",
+            "url": "https://github.com/example-org/docs/issues/120",
+            "state": "CLOSED",
+            "createdAt": "2026-01-29T04:36:59Z",
+            "body": ">こちらは別の PR で対応します。\n> 念のため確認させてください。\n> ここの条件は逆ではないでしょうか。\n\n> 直しました。もう一度見てください。\n> テストを足しておきます。\n> * @alice この名前のほうが分かりやすいと思います。\n> * @rupert 了解です。\n@ivan @peggy @mallory @olivia @sybil @grace @niaj ここの条件は逆ではないでしょうか。",
+            "author": {
+              "login": "example-bot-3",
+              "__typename": "Bot"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_Os4XS6HmoWUsN4vWEl_RwlLB27OVOy7k59",
+                  "createdAt": "2026-01-29T04:36:59Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "mallory"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_cxe-edxqyaTFtVyvUuJxdSSHI6SDhat5zW",
+                  "createdAt": "2026-01-29T04:37:00Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "niaj"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_jeXU3mzNIPVtbWhvbwaBMq_Bcy5Za3SUcx",
+                  "createdAt": "2026-01-29T04:37:00Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "olivia"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_VgnXca2IRSCMNRuIe4I0U0mpGiKgjMs6zG",
+                  "createdAt": "2026-01-29T04:37:01Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "peggy"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_-OiGd7M8MrAavEmr3HYLh9QxILyAfCUEdx",
+                  "createdAt": "2026-01-29T04:37:01Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "rupert"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_2cMmr-3Ll7apNfrm3BgIgghrCxb3NlryeV",
+                  "createdAt": "2026-01-29T04:37:01Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "sybil"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_oZFxQpmukg1p4_X0cC7yglU9XEgsRBxmDy",
+                  "createdAt": "2026-01-29T04:37:02Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "grace"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_OJd5JYrLoBFQGRraQc3pBzNOkpTWRmCdls",
+                  "createdAt": "2026-01-29T04:37:02Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "ivan"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_cBfj4z5F5N7ThZb28ZYsxavSS-wn6zi-DF",
+                  "createdAt": "2026-01-29T04:37:02Z",
+                  "actor": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_-eZYCgF6uuiA2Cpnv9IuTA",
+                  "url": "https://github.com/example-org/docs/issues/120#issuecomment-4878235078",
+                  "createdAt": "2026-01-29T04:37:03Z",
+                  "body": "手元で動くことを確かめました。",
+                  "author": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_wW46sOBoEBiuNdYdxY6M1A",
+                  "url": "https://github.com/example-org/docs/issues/120#issuecomment-5022829679",
+                  "createdAt": "2026-01-29T04:41:23Z",
+                  "body": "こちらは別の PR で対応します。",
+                  "author": {
+                    "login": "grace",
+                    "__typename": "User"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_jzjdZzQ_15fChdgfW4V7Nn",
+                  "url": "https://github.com/example-org/docs/issues/120#issuecomment-6991649570",
+                  "createdAt": "2026-01-29T04:41:33Z",
+                  "body": "念のため確認させてください。",
+                  "author": {
+                    "login": "example-bot-3",
+                    "__typename": "Bot"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "t3": {
+          "pullRequest": {
+            "id": "PR_X0wvy8aGsk1GR_gFWNL-6A",
+            "number": 149,
+            "title": "ログイン画面の文言を直す（5）",
+            "url": "https://github.com/example-org/app/pull/149",
+            "state": "OPEN",
+            "isDraft": false,
+            "createdAt": "2026-01-17T22:38:07Z",
+            "body": "ここの条件は逆ではないでしょうか。\n\n## 直しました。もう一度見てください。\n\n* テストを足しておきます。\n\n## この名前のほうが分かりやすいと思います。\n",
+            "author": {
+              "login": "peggy",
+              "__typename": "User"
+            },
+            "viewerLatestReview": {
+              "state": "APPROVED"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_TWpmo2QxIBDp-3v4lfQPM2CWat5NAqWAve",
+                  "createdAt": "2026-01-17T23:55:54Z",
+                  "actor": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_a8Mi1GdIHIWa_4g-qri4_NfqLerlQxliSB",
+                  "createdAt": "2026-01-18T01:35:36Z",
+                  "actor": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_uJdeFktJFIc2ymStTgZYmInSsMje6Vtg7q",
+                  "createdAt": "2026-01-20T20:42:30Z",
+                  "actor": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "grace"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_2DdlmcJn0WutMWNnICB3caqVA1c2tQOjx-",
+                  "createdAt": "2026-01-20T20:42:47Z",
+                  "actor": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_CLbtEDz5UJ0_gO5FTzAIrL1-lc3d7CdgfN",
+                  "createdAt": "2026-01-20T20:43:16Z",
+                  "actor": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "dave"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_xZgjsUVLhSw_BIpdNyDkhA",
+                  "url": "https://github.com/example-org/app/pull/149#issuecomment-7146101915",
+                  "createdAt": "2026-01-21T00:00:36Z",
+                  "body": "了解です。\n1. 手元で動くことを確かめました。\n2. こちらは別の PR で対応します。\n\n念のため確認させてください。\n",
+                  "author": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_VxJCFzdEqYQ-q0wWDnZDGO",
+                  "url": "https://github.com/example-org/app/pull/149#issuecomment-8272572820",
+                  "createdAt": "2026-01-21T02:57:48Z",
+                  "body": "@peggy ここの条件は逆ではないでしょうか。\n1. 直しました。もう一度見てください。\n2. テストを足しておきます。\n",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  }
+                }
+              ]
+            },
+            "reviews": {
+              "pageInfo": {
+                "hasPreviousPage": false,
+                "startCursor": "example"
+              },
+              "nodes": [
+                {
+                  "id": "PRR_YjPzgOWEo9fZ2kLNGhiKvS",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-9390839922",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-18T00:02:27Z",
+                  "submittedAt": "2026-01-18T00:02:28Z",
+                  "body": "この名前のほうが分かりやすいと思います。\n\n### 了解です。\n\n手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n念のため確認させてください。",
+                  "author": {
+                    "login": "example-bot-2",
+                    "__typename": "Bot"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r1752750045",
+                        "body": "ここの条件は逆ではないでしょうか。",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_4lcjbs9PfotOWfWxt48m8q",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-2667364953",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-18T01:34:14Z",
+                  "submittedAt": "2026-01-18T01:34:14Z",
+                  "body": "",
+                  "author": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r3888195178",
+                        "body": "直しました。もう一度見てください。\n\nテストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n* 了解です。\n* 手元で動くことを確かめました。",
+                        "replyTo": {
+                          "id": "PRRC_qw-zCVtBemqQ11hzVhrZXb"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_RwNAr5ZPZP8Ngd6TMeh7XT",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-4571462376",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-18T01:40:05Z",
+                  "submittedAt": "2026-01-18T01:40:05Z",
+                  "body": "こちらは別の PR で対応します。\n\n### 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n",
+                  "author": {
+                    "login": "example-bot-2",
+                    "__typename": "Bot"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_pxFKQDv6NVthHtVFEKHO26",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-5363623988",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-20T21:52:20Z",
+                  "submittedAt": "2026-01-20T21:52:20Z",
+                  "body": "@peggy テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n  - 手元で動くことを確かめました。\n  - こちらは別の PR で対応します。\n    - 念のため確認させてください。",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r6863748357",
+                        "body": "@peggy ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n\n- テストを足しておきます。\n- この名前のほうが分かりやすいと思います。\n\n  了解です。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r7683739656",
+                        "body": "@peggy 手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r8299746001",
+                        "body": "@peggy テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n- 了解です。\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_olKZT_KsA5e-FT_5MhF5Fr",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-9332015473",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T00:00:30Z",
+                  "submittedAt": "2026-01-21T00:00:30Z",
+                  "body": "",
+                  "author": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r1366734456",
+                        "body": "念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n- 直しました。もう一度見てください。\n- テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n了解です。",
+                        "replyTo": {
+                          "id": "PRRC_aJp2EpXYkLnb2PaQILRcit"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_NMEwkpuwVJ4ogfX_Bca_bG",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-2746761312",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T00:00:31Z",
+                  "submittedAt": "2026-01-21T00:00:32Z",
+                  "body": "",
+                  "author": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r3116969139",
+                        "body": "手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n",
+                        "replyTo": {
+                          "id": "PRRC_96V7z3Re8grqUmGr2QuJJm"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_MIiUmPxXngtH-ffwPG1Yor",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-4005142970",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T00:00:34Z",
+                  "submittedAt": "2026-01-21T00:00:34Z",
+                  "body": "",
+                  "author": {
+                    "login": "peggy",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r5867445852",
+                        "body": "直しました。もう一度見てください。\nテストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n了解です。\n",
+                        "replyTo": {
+                          "id": "PRRC_0i4dD-8Hkti2cELeE2-RWP"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_PEIwZeVcdpBL9yQqruvVkt",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-6332038459",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T02:57:58Z",
+                  "submittedAt": "2026-01-21T02:57:58Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r7110063624",
+                        "body": "@peggy 手元で動くことを確かめました。\nこちらは別の PR で対応します。\n",
+                        "replyTo": {
+                          "id": "PRRC_aJp2EpXYkLnb2PaQILRcit"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_-HXZIKT0WnqyEkLNNSS3Ly",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-8091636465",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T02:58:01Z",
+                  "submittedAt": "2026-01-21T02:58:01Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r9465028916",
+                        "body": "@peggy 念のため確認させてください。\n",
+                        "replyTo": {
+                          "id": "PRRC_0i4dD-8Hkti2cELeE2-RWP"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_eonYveB_aL0iK0A6iNWd3u",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-1943489859",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-21T02:58:04Z",
+                  "submittedAt": "2026-01-21T02:58:04Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/149#discussion_r2878141736",
+                        "body": "@peggy ここの条件は逆ではないでしょうか。\n",
+                        "replyTo": {
+                          "id": "PRRC_96V7z3Re8grqUmGr2QuJJm"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_yM3ZFggQ7R0SOZP089b5gV",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-3453379748",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-21T03:04:02Z",
+                  "submittedAt": "2026-01-21T03:04:02Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_m_6yqect7NbEs2Eut7gIex",
+                  "url": "https://github.com/example-org/app/pull/149#pullrequestreview-4140529802",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-22T02:45:57Z",
+                  "submittedAt": "2026-01-22T02:45:57Z",
+                  "body": "",
+                  "author": {
+                    "login": "grace",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

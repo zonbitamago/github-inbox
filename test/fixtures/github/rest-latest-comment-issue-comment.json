@@ -1,0 +1,65 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/repos/example-org/api/issues/comments/4732979136"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "etag": "W/\"eb50e72db0af659d7b595ae9301a49560bc33877813e38af56f93f48a9bb3902\"",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4977",
+      "x-ratelimit-reset": "1769821441",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "23"
+    },
+    "body": {
+      "url": "https://api.github.com/repos/example-org/api/issues/comments/4732979136",
+      "html_url": "https://github.com/example-org/api/pull/106#issuecomment-4732979136",
+      "issue_url": "https://api.github.com/repos/example-org/api/issues/106",
+      "id": 4732979136,
+      "node_id": "IC_W1l8MqfRtgm1OEfEIZsLPO",
+      "user": {
+        "login": "bob",
+        "id": 311888933,
+        "node_id": "U_-aUNkF_Fi6",
+        "avatar_url": "https://avatars.githubusercontent.com/u/311888933?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/bob",
+        "html_url": "https://github.com/bob",
+        "followers_url": "https://api.github.com/users/bob/followers",
+        "following_url": "https://api.github.com/users/bob/following{/other_user}",
+        "gists_url": "https://api.github.com/users/bob/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/bob/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/bob/subscriptions",
+        "organizations_url": "https://api.github.com/users/bob/orgs",
+        "repos_url": "https://api.github.com/users/bob/repos",
+        "events_url": "https://api.github.com/users/bob/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/bob/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-01-30T19:41:36Z",
+      "updated_at": "2026-01-30T19:41:36Z",
+      "author_association": "MEMBER",
+      "body": "@alice 手元で動くことを確かめました。\nこちらは別の PR で対応します。\n\n念のため確認させてください。\n\n### ここの条件は逆ではないでしょうか。\n\n* 直しました。もう一度見てください。",
+      "reactions": {
+        "url": "https://api.github.com/repos/example-org/api/issues/comments/4732979136/example",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": null,
+      "minimized": null,
+      "pin": null
+    }
+  }
+}

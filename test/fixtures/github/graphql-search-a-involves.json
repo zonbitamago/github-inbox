@@ -1,0 +1,1135 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/graphql",
+    "body": {
+      "query": "query Search($q: String!) {\n  search(query: $q, type: ISSUE, first: 100) {\n    issueCount\n    pageInfo { hasNextPage endCursor }\n    nodes { ... on PullRequest { id number title url state isDraft updatedAt author { login __typename } repository { nameWithOwner } assignees(first: 10) { nodes { login } } } }\n  }\n}\n",
+      "variables": {
+        "q": "is:pr involves:@me updated:>2026-01-24T00:00:00Z"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4739",
+      "x-ratelimit-reset": "1769817608",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "261"
+    },
+    "body": {
+      "data": {
+        "search": {
+          "issueCount": 48,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "example"
+          },
+          "nodes": [
+            {
+              "id": "PR_nxduzdVbTjmaCuCDlOddDi",
+              "number": 101,
+              "title": "ログイン画面の文言を直す",
+              "url": "https://github.com/example-org/app/pull/101",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T23:47:07Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_afiz6ZPPJjK-tHHbRJiTPK",
+              "number": 105,
+              "title": "README に使い方を足す",
+              "url": "https://github.com/example-org/app/pull/105",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T21:42:50Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_wTJCTNdjwmAtLQ-Gp_c3-_",
+              "number": 106,
+              "title": "依存パッケージを更新する",
+              "url": "https://github.com/example-org/api/pull/106",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T19:41:36Z",
+              "author": {
+                "login": "bob",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "bob"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_6zkG7Vlf7Knky9rRjse4eB",
+              "number": 151,
+              "title": "設定の保存に失敗したときの表示を足す（5）",
+              "url": "https://github.com/example-org/repo-11/pull/151",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T19:01:36Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_lzTOWRd2gB0CIPGBf8pfgL",
+              "number": 112,
+              "title": "ログの出力先を設定で変えられるようにする",
+              "url": "https://github.com/example-org/app/pull/112",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T19:00:53Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_LScjRqN2yvBv5Ekb2200kF",
+              "number": 152,
+              "title": "CI の待ち時間を短くする（5）",
+              "url": "https://github.com/example-org/repo-11/pull/152",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T22:04:40Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_5KzmeSbIoQ8VVtwRaY4zvW",
+              "number": 114,
+              "title": "一覧の並び順を更新日時にする（2）",
+              "url": "https://github.com/example-org/app/pull/114",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T21:31:42Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_bmQCa7O7QWSgMrE7Tb6NHl",
+              "number": 110,
+              "title": "日付の表示を地域の時刻にする",
+              "url": "https://github.com/example-org/api/pull/110",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T16:36:34Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_a0-7zhmV1Q6khtQt8O8H_g",
+              "number": 153,
+              "title": "README に使い方を足す（5）",
+              "url": "https://github.com/example-org/batch/pull/153",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T16:36:49Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/batch"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_MwMp3bnfp8puDd2Byc396g",
+              "number": 115,
+              "title": "設定の保存に失敗したときの表示を足す（2）",
+              "url": "https://github.com/example-org/app/pull/115",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T20:07:59Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_un6WdHCjOOKckdDnJICXkg",
+              "number": 154,
+              "title": "依存パッケージを更新する（5）",
+              "url": "https://github.com/example-org/repo-12/pull/154",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T19:46:23Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-12"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_834b1hv6OdIL4Fo5Wiizsl",
+              "number": 104,
+              "title": "CI の待ち時間を短くする",
+              "url": "https://github.com/example-org/api/pull/104",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T21:27:17Z",
+              "author": {
+                "login": "carol",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "carol"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_bO6QTmzXJ-w3Qqc7zTzosU",
+              "number": 117,
+              "title": "README に使い方を足す（2）",
+              "url": "https://github.com/example-org/app/pull/117",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T18:48:18Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_8bfJkg1WUWPO0ohw61ED5J",
+              "number": 121,
+              "title": "エラーの文言を見直す（2）",
+              "url": "https://github.com/example-org/mobile/pull/121",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T02:41:57Z",
+              "author": {
+                "login": "dave",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/mobile"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "dave"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_UYq5W2QCjira1PEbrN6CcN",
+              "number": 122,
+              "title": "日付の表示を地域の時刻にする（2）",
+              "url": "https://github.com/example-org/api/pull/122",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T22:14:48Z",
+              "author": {
+                "login": "bob",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "bob"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_8_0GPX_fEEeC6YQUOHjj01",
+              "number": 119,
+              "title": "API のタイムアウトを延ばす（2）",
+              "url": "https://github.com/example-org/app/pull/119",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T17:39:29Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_HLiazPYPyKTzWzAF84-3rQ",
+              "number": 111,
+              "title": "検索の条件に期間を足す",
+              "url": "https://github.com/example-org/api/pull/111",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T18:10:32Z",
+              "author": {
+                "login": "erin",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "erin"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_-066R1xiBD8SMxBJamEXqG",
+              "number": 126,
+              "title": "一覧の並び順を更新日時にする（3）",
+              "url": "https://github.com/example-org/api/pull/126",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T04:43:46Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_PNzEsvGAW_CiRMG4JwN5XZ",
+              "number": 102,
+              "title": "一覧の並び順を更新日時にする",
+              "url": "https://github.com/example-org/api/pull/102",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T22:51:46Z",
+              "author": {
+                "login": "frank",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "frank"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_-uL2VOCMHUVCYbM39rCl-b",
+              "number": 155,
+              "title": "API のタイムアウトを延ばす（5）",
+              "url": "https://github.com/example-org/repo-11/pull/155",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T19:54:56Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_O_K-Wf0qGpZoA0CLAJkUkW",
+              "number": 109,
+              "title": "エラーの文言を見直す",
+              "url": "https://github.com/example-org/app/pull/109",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T20:13:29Z",
+              "author": {
+                "login": "dave",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "dave"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_u9lGl83sh5b9QP4zDXCS5d",
+              "number": 123,
+              "title": "検索の条件に期間を足す（2）",
+              "url": "https://github.com/example-org/infra/pull/123",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T01:39:46Z",
+              "author": {
+                "login": "grace",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/infra"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "grace"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_GaSuFowGvGpMOBNBPemBfO",
+              "number": 128,
+              "title": "CI の待ち時間を短くする（3）",
+              "url": "https://github.com/example-org/api/pull/128",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T21:41:08Z",
+              "author": {
+                "login": "erin",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "erin"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_RznOQG-aS-ume3WmD9dohF",
+              "number": 116,
+              "title": "CI の待ち時間を短くする（2）",
+              "url": "https://github.com/example-org/infra/pull/116",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T19:24:37Z",
+              "author": {
+                "login": "grace",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/infra"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "grace"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_B_oMZo3hzQQm7F3Mm-sCkF",
+              "number": 140,
+              "title": "CI の待ち時間を短くする（4）",
+              "url": "https://github.com/example-org/batch/pull/140",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-24T19:53:30Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/batch"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_R6y3XpRSLrRg1kHikk-s_N",
+              "number": 135,
+              "title": "検索の条件に期間を足す（3）",
+              "url": "https://github.com/example-org/app/pull/135",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-25T00:03:28Z",
+              "author": {
+                "login": "heidi",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "heidi"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_JegIKk8FE8dtOFp26GErLJ",
+              "number": 156,
+              "title": "テストの名前を揃える（5）",
+              "url": "https://github.com/example-org/repo-11/pull/156",
+              "state": "OPEN",
+              "isDraft": true,
+              "updatedAt": "2026-01-29T21:48:27Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_QdPSo9PeSi0Ns313j9EFHX",
+              "number": 157,
+              "title": "エラーの文言を見直す（5）",
+              "url": "https://github.com/example-org/repo-11/pull/157",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T21:48:20Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_YA_yZdoi75Z0tKr7LYsGQ0",
+              "number": 118,
+              "title": "依存パッケージを更新する（2）",
+              "url": "https://github.com/example-org/app/pull/118",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T18:01:26Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_PWBB4uf6UFyhF4Nzd4VT1V",
+              "number": 103,
+              "title": "設定の保存に失敗したときの表示を足す",
+              "url": "https://github.com/example-org/web/pull/103",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T22:29:27Z",
+              "author": {
+                "login": "dave",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/web"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "dave"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_xnT2pnlBysvbxs6M7AziSU",
+              "number": 137,
+              "title": "ログイン画面の文言を直す（4）",
+              "url": "https://github.com/example-org/app/pull/137",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T22:45:14Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_wD5BKwg3Ut77ojMS4A-jHJ",
+              "number": 139,
+              "title": "設定の保存に失敗したときの表示を足す（4）",
+              "url": "https://github.com/example-org/data/pull/139",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T18:58:59Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/data"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_CCB1jeddAtVu7DNndBw0Kw",
+              "number": 133,
+              "title": "エラーの文言を見直す（3）",
+              "url": "https://github.com/example-org/cli/pull/133",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-25T00:03:51Z",
+              "author": {
+                "login": "heidi",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/cli"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "heidi"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_EqUwNKWFn3VI5dTnPUP6Zd",
+              "number": 134,
+              "title": "日付の表示を地域の時刻にする（3）",
+              "url": "https://github.com/example-org/app/pull/134",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-25T00:03:28Z",
+              "author": {
+                "login": "heidi",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "heidi"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_qmSUbChJslhgSwenfRnIoD",
+              "number": 138,
+              "title": "一覧の並び順を更新日時にする（4）",
+              "url": "https://github.com/example-org/api/pull/138",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-24T21:42:18Z",
+              "author": {
+                "login": "carol",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "carol"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_RIelVN-vzLwMhxSSWTO1dN",
+              "number": 113,
+              "title": "ログイン画面の文言を直す（2）",
+              "url": "https://github.com/example-org/docs/pull/113",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T20:42:59Z",
+              "author": {
+                "login": "dave",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/docs"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "dave"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_rg-08vXXC-JbKQkECORGGU",
+              "number": 136,
+              "title": "ログの出力先を設定で変えられるようにする（3）",
+              "url": "https://github.com/example-org/api/pull/136",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-24T22:34:02Z",
+              "author": {
+                "login": "bob",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "bob"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_NJjNKgBV-lBlnfHVdZQywR",
+              "number": 125,
+              "title": "ログイン画面の文言を直す（3）",
+              "url": "https://github.com/example-org/api/pull/125",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T00:35:05Z",
+              "author": {
+                "login": "erin",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "erin"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_D8ma38YwHLB4Iy6_LDJxUF",
+              "number": 158,
+              "title": "日付の表示を地域の時刻にする（5）",
+              "url": "https://github.com/example-org/repo-11/pull/158",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T19:48:55Z",
+              "author": {
+                "login": "ivan",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-11"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "ivan"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_2CxpYeN_YInAqv2vuHSaa1",
+              "number": 127,
+              "title": "設定の保存に失敗したときの表示を足す（3）",
+              "url": "https://github.com/example-org/api/pull/127",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-28T23:09:35Z",
+              "author": {
+                "login": "carol",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "carol"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_cqjd3h9wSF_yo51sjZraSU",
+              "number": 124,
+              "title": "ログの出力先を設定で変えられるようにする（2）",
+              "url": "https://github.com/example-org/api/pull/124",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T01:39:02Z",
+              "author": {
+                "login": "frank",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "frank"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_SE_6n7nY51yaGVrFaevJ6C",
+              "number": 129,
+              "title": "README に使い方を足す（3）",
+              "url": "https://github.com/example-org/api/pull/129",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-25T01:31:40Z",
+              "author": {
+                "login": "frank",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "frank"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_kh1nnBGKZbY8YDN8ZCXLMg",
+              "number": 131,
+              "title": "API のタイムアウトを延ばす（3）",
+              "url": "https://github.com/example-org/api/pull/131",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-25T00:24:11Z",
+              "author": {
+                "login": "carol",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "carol"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_X-Xc6R4pnVlbHcMvoAugOM",
+              "number": 141,
+              "title": "README に使い方を足す（4）",
+              "url": "https://github.com/example-org/api/pull/141",
+              "state": "MERGED",
+              "isDraft": false,
+              "updatedAt": "2026-01-24T01:50:37Z",
+              "author": {
+                "login": "bob",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/api"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "erin"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_lMg8BKshOexgUyThdbjWhc",
+              "number": 159,
+              "title": "検索の条件に期間を足す（5）",
+              "url": "https://github.com/example-org/repo-13/pull/159",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T17:09:01Z",
+              "author": {
+                "login": "ivan",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/repo-13"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  },
+                  {
+                    "login": "ivan"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_KfumECJkDMf09LMW",
+              "number": 160,
+              "title": "ログの出力先を設定で変えられるようにする（5）",
+              "url": "https://github.com/example-org/app/pull/160",
+              "state": "CLOSED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T19:25:47Z",
+              "author": {
+                "login": "judy",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": []
+              }
+            },
+            {
+              "id": "PR_5WGRqWlKiUzHinwD",
+              "number": 161,
+              "title": "ログイン画面の文言を直す（6）",
+              "url": "https://github.com/example-org/cli/pull/161",
+              "state": "CLOSED",
+              "isDraft": false,
+              "updatedAt": "2026-01-30T17:19:57Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/cli"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "alice"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "PR_VQ33nLhnuYc1uibH",
+              "number": 162,
+              "title": "一覧の並び順を更新日時にする（6）",
+              "url": "https://github.com/example-org/app/pull/162",
+              "state": "CLOSED",
+              "isDraft": true,
+              "updatedAt": "2026-01-30T17:14:32Z",
+              "author": {
+                "login": "alice",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/app"
+              },
+              "assignees": {
+                "nodes": []
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

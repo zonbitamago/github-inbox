@@ -1,0 +1,11 @@
+# 依存パッケージの更新（security-rules.md S-11）。Electron のメジャー版を上げる PR は、対応 OS（C-07）を確かめてから入れる。
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

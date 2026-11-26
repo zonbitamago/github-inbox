@@ -1,0 +1,59 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/graphql",
+    "body": {
+      "query": "query Search($q: String!) {\n  search(query: $q, type: ISSUE, first: 100) {\n    issueCount\n    pageInfo { hasNextPage endCursor }\n    nodes { ... on PullRequest { id number title url state isDraft updatedAt author { login __typename } repository { nameWithOwner } assignees(first: 10) { nodes { login } } } }\n  }\n}\n",
+      "variables": {
+        "q": "is:pr review-requested:@me updated:>2026-01-24T00:00:00Z"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4377",
+      "x-ratelimit-reset": "1769817668",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "623"
+    },
+    "body": {
+      "data": {
+        "search": {
+          "issueCount": 1,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "example"
+          },
+          "nodes": [
+            {
+              "id": "PR_8bfJkg1WUWPO0ohw61ED5J",
+              "number": 121,
+              "title": "エラーの文言を見直す（2）",
+              "url": "https://github.com/example-org/mobile/pull/121",
+              "state": "OPEN",
+              "isDraft": false,
+              "updatedAt": "2026-01-29T02:41:57Z",
+              "author": {
+                "login": "dave",
+                "__typename": "User"
+              },
+              "repository": {
+                "nameWithOwner": "example-org/mobile"
+              },
+              "assignees": {
+                "nodes": [
+                  {
+                    "login": "dave"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
