@@ -12,3 +12,14 @@ export const EXCERPT_MAX_LENGTH = 200
 
 /** 作者が消えたアカウントのとき、GitHub と同じく "ghost" と出す（⑬ B3 で AI が決めた） */
 export const GHOST_LOGIN = 'ghost'
+
+/** 保存する出来事は、発生からこの日数まで。過ぎたら消す（domain-model.md 7. I-4、N-10、AC-40） */
+export const EVENT_RETENTION_DAYS = 30
+
+/** ログを残す日数（non-functional.md Q-15、security-rules.md S-09） */
+export const LOG_RETENTION_DAYS = 7
+
+/** 壊れて退避した保存のファイルを残す日数（component-backend.md 7.。AI案） */
+export const CORRUPT_FILE_RETENTION_DAYS = 7
+
+export const DAY_MS = 24 * 60 * 60 * 1000
