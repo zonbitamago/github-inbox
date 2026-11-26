@@ -29,4 +29,4 @@
 - `github-shapes.ts`: 判定の材料の形。`src/main/github/` が zod で検査し、ページをたどった分を `nodes` につなげてから渡す
 - `constants.ts`: メインプロセスの数値の決まり（重なり5分・デスクトップ通知の10分・抜粋の長さなど）。数を足すときもここに置く
 - `expand-thread.ts`: M-0〜M-9。M-9 は2段で、`expandThread` が `needsMentionFallback` を返し、取り込みの側が最新のコメントを読んで `mentionFallbackEvent` に渡す（CR-004）
-- CI の結果の分解（`ci_activity`）はまだ無い。本リポジトリの CI の実行を記録してから、テストを先に書いて足す（build-plan.md 5. の 0-7）
+- `expand-workflow-runs.ts`: CI の結果（`ci_activity` のスレッドのワークフロー実行）。利用者が起動して完了したものだけ（⑬ の 0-7 で記録した応答で作った）

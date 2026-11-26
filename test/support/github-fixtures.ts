@@ -5,6 +5,7 @@ import expandOwn from '../fixtures/github/graphql-expand-own-prs.json'
 import latestIssueBody from '../fixtures/github/rest-latest-comment-issue-body.json'
 import latestIssueComment from '../fixtures/github/rest-latest-comment-issue-comment.json'
 import latestPrBody from '../fixtures/github/rest-latest-comment-pr-body.json'
+import workflowRuns from '../fixtures/github/rest-workflow-runs.json'
 import searchA from '../fixtures/github/graphql-search-a-involves.json'
 import searchB from '../fixtures/github/graphql-search-b-review-requested.json'
 import searchC from '../fixtures/github/graphql-search-c-own-open.json'
@@ -14,6 +15,7 @@ import type {
   GhPullRequestNode,
   GhSearchPullRequest,
   GhSearchPullRequestStatus,
+  GhWorkflowRun,
 } from '../../src/main/core/github-shapes'
 
 /** 記録した応答の利用者 */
@@ -65,3 +67,10 @@ export const searchReviewRequested = (): GhSearchPullRequest[] =>
   structuredClone(searchB.response.body.data.search.nodes as unknown as GhSearchPullRequest[])
 export const searchOwnOpen = (): GhSearchPullRequestStatus[] =>
   structuredClone(searchC.response.body.data.search.nodes as unknown as GhSearchPullRequestStatus[])
+
+/** 本リポジトリ（架空の名前では alice/tools）のワークフロー実行。利用者の push・PR・やり直し（2回目）と、bot（Dependabot）の実行 */
+export const recordedWorkflowRuns = (): GhWorkflowRun[] =>
+  structuredClone(workflowRuns.response.body.workflow_runs as unknown as GhWorkflowRun[])
+
+/** ワークフロー実行の記録の since（日時は 2026-01-01 起点にずらしてある） */
+export const RECORDED_CI_SINCE = '2026-01-01T00:00:00Z'
