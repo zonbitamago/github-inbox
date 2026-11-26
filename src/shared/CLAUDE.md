@@ -2,6 +2,8 @@
 
 画面（`src/renderer`）・preload・メインプロセス（`src/main`）が共有する型・区分値・IPC の契約を置く場所。**この3つの間の取り決めの唯一の正**（ipc-contract.md 1.）。
 
+**2026-11-26 に凍結した**（build-plan.md 6.4）。変えたくなったら実装を止め、変更要求（`docs/build/change-requests/CR-NNN.md`）を起票する（build-plan.md 6.2）。
+
 ## 置くもの
 
 - `domain.ts`: domain-model.md 2. の型と、6. の区分値、設定の既定値

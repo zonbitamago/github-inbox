@@ -5,6 +5,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # 本文の「整理だけ」の印を付けたときにも検査し直す（build-plan.md 6.3）
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -16,11 +18,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # 契約・判定の変更と文書の対応を、PR の基のコミットとの差分で見るため
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - name: 契約・判定の変更と文書の対応（build-plan.md 6.3）
+        if: github.event_name == 'pull_request'
+        env:
+          # PR の本文は信用できない文字なので、run に直接埋め込まず環境変数で渡す（security-rules.md S-12）
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-contract-docs.ts
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck

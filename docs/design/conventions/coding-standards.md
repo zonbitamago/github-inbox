@@ -123,6 +123,8 @@
 | `shell.openExternal` を `src/main/app/external.ts` 以外で呼ばない | ESLint `no-restricted-syntax` |
 | `fetch` を `src/main/github/` 以外で使わない | ESLint `no-restricted-globals`（DR-13） |
 | GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い） | テスト（security-rules.md S-07） |
+| 契約・判定（`src/shared/`・`src/main/core/`）を変えるときは、文書か変更要求を同じ PR で直す | CI（`scripts/check-contract-docs.ts`。build-plan.md 6.3。⑬ の凍結で足した） |
+| 凍結した契約・判定・トークンを AI が書き換えるときは、技術者に確認が出る | Claude Code の `.claude/settings.json` の `permissions.ask`（build-plan.md 6.3） |
 
 ---
 
