@@ -27,16 +27,16 @@ export const ThreadRecordSchema = z.strictObject({
 export type ThreadRecord = z.infer<typeof ThreadRecordSchema>
 
 /** GitHub の通知の問い合わせの記録（domain-model.md 5.。ETag は CR-003） */
-export const NotificationsCursorSchema = z.strictObject({
+export const GitHubNotificationCursorSchema = z.strictObject({
   etag: z.string().min(1).optional(),
   lastSuccessAt: IsoDateTimeSchema.optional(),
 })
-export type NotificationsCursor = z.infer<typeof NotificationsCursorSchema>
+export type GitHubNotificationCursor = z.infer<typeof GitHubNotificationCursorSchema>
 
 export const EventsFileSchema = z.strictObject({
   schemaVersion: z.literal(1),
   events: z.array(GitHubEventSchema),
-  notifications: NotificationsCursorSchema,
+  githubNotifications: GitHubNotificationCursorSchema,
   threads: z.record(z.string().min(1), ThreadRecordSchema),
 })
 type EventsFile = z.infer<typeof EventsFileSchema>
@@ -44,12 +44,17 @@ type EventsFile = z.infer<typeof EventsFileSchema>
 export interface EventsChange {
   events?: GitHubEvent[]
   /** 渡した項目だけを変える */
-  notifications?: NotificationsCursor
+  githubNotifications?: GitHubNotificationCursor
   /** 渡したスレッドだけを置き換える。null なら消す */
   threads?: Record<string, ThreadRecord | null>
 }
 
-const empty = (): EventsFile => ({ schemaVersion: 1, events: [], notifications: {}, threads: {} })
+const empty = (): EventsFile => ({
+  schemaVersion: 1,
+  events: [],
+  githubNotifications: {},
+  threads: {},
+})
 
 /** I-4: 発生から30日を過ぎた出来事と、30日動きの無いスレッドの記録を除く */
 function withoutExpired(file: EventsFile, now: Date): EventsFile {
@@ -122,7 +127,7 @@ export class EventsStore {
         {
           schemaVersion: 1,
           events: [...this.state.events, ...added],
-          notifications: { ...this.state.notifications, ...change.notifications },
+          githubNotifications: { ...this.state.githubNotifications, ...change.githubNotifications },
           threads,
         },
         now,
@@ -165,8 +170,8 @@ export class EventsStore {
       .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt))
   }
 
-  notifications(): NotificationsCursor {
-    return { ...this.state.notifications }
+  githubNotificationCursor(): GitHubNotificationCursor {
+    return { ...this.state.githubNotifications }
   }
 
   thread(id: string): ThreadRecord | undefined {

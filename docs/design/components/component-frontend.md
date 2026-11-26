@@ -121,6 +121,18 @@ src/renderer/
 - 絞り込みの関数（`filterEvents`・`filterPrs`）と表示の整形は、部品から切り離した関数にして単体テストを書く（test-strategy.md 2.）
 - Feature どうしは直接読み合わない。共有するものは `main-store` か `ui/` に置く
 
+**読んでよい向き**（⑭ S1 の後に足した。AI案を技術者が確かめる）。ここに無い向きは CI の構造の検査（dependency-cruiser。`.dependency-cruiser.cjs`）が止める。新しいフォルダや向きが要るときは、先にこの表を直す。同じフォルダの中と `src/shared/` は、どこからでも読んでよい。`src/main/`・`src/preload/` は読まない（ADR-007）。
+
+| フォルダ | 読んでよい先 | 理由 |
+| --- | --- | --- |
+| `main.tsx` | `App.tsx`、`main-store/`、`styles/` | 入口 |
+| `App.tsx` | `pages/`、`main-store/`、`i18n/` | 1. の画面の切り替え |
+| `pages/` | `features/`、`ui/`、`main-store/`、`i18n/` | |
+| `features/<名前>/` | 自分の Feature の中、`ui/`、`main-store/`、`i18n/` | Feature どうしは読まない |
+| `i18n/` | `main-store/` | 言語の設定を読む |
+| `main-store/` | （無し） | メインから届く状態だけを持つ |
+| `ui/` | （無し） | 業務の言葉を知らない（coding-standards.md 2.） |
+
 ---
 
 ## 8. 未定

@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    # 本文の「整理だけ」の印を付けたときにも検査し直す（build-plan.md 6.3）
+    # 本文の「整理だけ」「決まり（検査）を変えた」の印を付けたときにも検査し直す（build-plan.md 6.3）
     types: [opened, synchronize, reopened, edited]
 
 permissions:
@@ -32,7 +32,16 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/check-contract-docs.ts
+      - name: 検査の設定・テストの変更の申告（build-plan.md 6.3）
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node scripts/check-guard-changes.ts
       - run: npm run lint
+      # コードの構造（どのフォルダがどこを読んでよいか・循環）。component-backend.md 3.1、component-frontend.md 7.
+      - run: npm run check:structure
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run test:coverage

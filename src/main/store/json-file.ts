@@ -21,7 +21,7 @@ function stampOf(now: Date): string {
 }
 
 function isNotFound(error: unknown): boolean {
-  return (error as { code?: unknown }).code === 'ENOENT'
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
 async function moveAside(path: string, now: Date): Promise<ReadResult<never>> {

@@ -41,6 +41,7 @@ function returnsResult(channel: InvokeChannel): boolean {
 
 export function registerInvokeHandlers(deps: IpcDeps, handlers: InvokeHandlers): void {
   for (const channel of INVOKE_CHANNELS) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- チャンネルごとに型の違う関数を1つの型で回すため。引数は下で契約のスキーマで検査してから渡す
     const handler = handlers[channel] as ((args: unknown) => Promise<unknown>) | undefined
     if (handler === undefined) continue
     const contract = invokeContract[channel]

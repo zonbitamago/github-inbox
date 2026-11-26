@@ -5,7 +5,18 @@
       "Edit(/src/main/core/**)",
       "Edit(/docs/design/api-contract/**)",
       "Edit(/docs/design/components/domain-model.md)",
-      "Edit(/src/renderer/styles/tokens.css)"
+      "Edit(/src/renderer/styles/tokens.css)",
+      "Edit(/eslint.config.mjs)",
+      "Edit(/.dependency-cruiser.cjs)",
+      "Edit(/.prettierrc.json)",
+      "Edit(/.prettierignore)",
+      "Edit(/tsconfig*.json)",
+      "Edit(/vitest.config.mts)",
+      "Edit(/test/config/**)",
+      "Edit(/test/contract/**)",
+      "Edit(/scripts/check-*.ts)",
+      "Edit(/.github/**)",
+      "Edit(/.claude/settings.json)"
     ]
   }
 }

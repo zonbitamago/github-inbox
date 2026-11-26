@@ -3,9 +3,9 @@
 - 作成: 2026-11-26（⑪ 規約設計）
 - 入力: ADR-003・007・009〜014、[component-backend.md](../components/component-backend.md)、[component-frontend.md](../components/component-frontend.md)、[domain-model.md](../components/domain-model.md)
 - 状態: 技術者が確認済み（2026-11-26）。「AI案」と書いた項目も技術者がこの内容で確認した（道具は ADR-014 で技術者が決めた）
-- 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-13・14）
+- 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-13・14）。2026-11-26 ⑭ S1 の後、10. の観点の多くを 9. の機械の検査に移した（技術者が決めた）
 
-**機械で拾えるもの（書式・型・import の向き・危ない書き方）は ESLint・Prettier・TypeScript で CI に強制し、ここには書かない**（設計フレーム ⑪）。ここに書くのは、機械では拾えない判断だけ。機械で強制する項目の一覧は 9.。
+**機械で拾えるものは ESLint・Prettier・TypeScript・テストで CI に強制する**（設計フレーム ⑪）。一覧は 9.。人が PR で見るのは、機械に移せない 10. の観点だけにする。新しい決まりを足すときは、まず機械で確かめられないかを考え、できないときは 10. に理由を書く。
 
 ---
 
@@ -33,6 +33,7 @@
 ## 2. 置き場所と境界
 
 - フォルダの構成は component-backend.md 3. と component-frontend.md 7. に従う。**新しいフォルダを作るときは、先にその文書を直す**
+- どのフォルダがどこを import してよいかは、component-backend.md 3.1 と component-frontend.md 7. の「読んでよい向き」の表に従う。表に無い向き・循環した import は、構造の検査（dependency-cruiser）が止める
 - `src/main/core/` は I/O を持たない（ネットワーク・ファイル・時計・Electron・`process` に触れない）。今の時刻が要る関数は、引数で `now` を受け取る（ADR-011）。詳しくは `src/main/core/CLAUDE.md`
 - `src/shared/` は画面とメインの契約。**文書（domain-model.md・ipc-contract.md）を先に直してから**コードを直す。詳しくは `src/shared/CLAUDE.md`
 - GitHub に問い合わせるのは `src/main/github/` だけ。使う API は github-api.md にあるものだけ。足すときは文書を先に直す
@@ -59,7 +60,7 @@
 | 出来事の一覧の日数 | `eventDays` |
 | 利用者 | `viewer` |
 
-- **`notification` を単独で名前に使わない**。どちらの通知か分からなくなるため（AGENTS.md の「通知と単独で書かない」と同じ）
+- **`notification` を単独で名前に使わない**。どちらの通知か分からなくなるため（AGENTS.md の「通知と単独で書かない」と同じ）。ESLint で止める。対象はコードの識別子で、引用符の要る名前（IPC のチャンネル名など契約の文字列）と、外の部品から import する名前は外す（build-plan.md 8.）
 
 ---
 
@@ -69,7 +70,8 @@
 - **時刻**: 保存と受け渡しは UTC の ISO 8601 の文字列。表示するときだけ利用者の地域の時刻にする
 - **画面の文言**: 部品に日本語・英語を直接書かない。`i18n/` のキーを使う（F-26）。区分値の表示名も `i18n/` に置く。CI の結果と GitHub から取った文字は訳さない
 - **GitHub から取った文字**: 文字としてだけ扱う（security-rules.md S-05）
-- **値の検査**: 外から来る値（GitHub の応答・保存したファイル・IPC の引数）は、使う前に zod で検査する。型の主張（`as`）でごまかさない
+- **値の検査**: 外から来る値（GitHub の応答・保存したファイル・IPC の引数）は、使う前に zod で検査する。型の主張（`as`）でごまかさない。`as` は ESLint で止める（`as const` は通る）。型の仕組みの都合でどうしても要るときは、`// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 理由` を付ける
+- **ESLint の例外**: 決まりを1か所だけ外すときは、無効にする決まりの名前と、`--` の後に理由を書く（テストで確かめる）。理由は技術者が PR で見る。要らなくなった無効化のコメントは ESLint が落とす
 - **設定の既定値**: `src/shared/` の1か所に置く（期間 7日、出来事の一覧の日数 7日など）。あちこちに数字を書かない
 - **数値の決まり**: 間隔（60秒）・しきい値（残り500）・同時の本数（4本）・重なり（5分）・デスクトップ通知の10分などは、`src/main/core/constants.ts` の1か所にまとめ、根拠（Q-01 など）をコメントに書く（⑬ B3。core はどの部品からも import できるため）
 
@@ -108,7 +110,7 @@
 
 ---
 
-## 9. 機械で強制するもの（⑬ で設定する）
+## 9. 機械で強制するもの（⑬ で設定し、⑭ S1 の後に広げた）
 
 | 項目 | 道具 |
 | --- | --- |
@@ -116,29 +118,44 @@
 | 型 | TypeScript（`strict`、`noUncheckedIndexedAccess`） |
 | 推奨の書き方 | ESLint（typescript-eslint の型を使う推奨設定、react-hooks） |
 | `src/main/core/` から `electron`・`node:*`・他の `src/main/` のフォルダを import しない | ESLint `no-restricted-imports` |
+| `src/main/core/` で時計（`Date.now()`・引数なしの `new Date()`）・乱数・`process`・タイマーを使わない（2.） | ESLint `no-restricted-syntax`・`no-restricted-globals` |
 | `src/renderer/` から `electron`・`node:*` を import しない | ESLint `no-restricted-imports` |
 | 画面の Feature どうしの import をしない | ESLint `no-restricted-imports` |
-| `dangerouslySetInnerHTML` を使わない | ESLint `react/no-danger` |
+| どのフォルダがどこを import してよいか（2.）・循環した import をしない・読み先の見つからない import をしない | 構造の検査（dependency-cruiser。`.dependency-cruiser.cjs`、`npm run check:structure`）。Java の ArchUnit にあたる。決まりが効いていることはテスト（`test/config/structure-rules.test.ts`）で確かめる |
+| GitHub から取った文字を HTML として扱わない（`dangerouslySetInnerHTML`・`innerHTML`・`insertAdjacentHTML` など） | ESLint `react/no-danger`・`no-restricted-syntax` |
 | `console` を使わない（ログの仕組みを使う） | ESLint `no-console` |
 | `shell.openExternal` を `src/main/app/external.ts` 以外で呼ばない | ESLint `no-restricted-syntax` |
 | `fetch` を `src/main/github/` 以外で使わない | ESLint `no-restricted-globals`（DR-13） |
-| GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い） | テスト（security-rules.md S-07） |
+| 識別子は英語（3.） | ESLint `id-match` |
+| `notification` を単独で名前に使わない（3.） | ESLint `@typescript-eslint/naming-convention` |
+| ファイル名・フォルダ名の形（3.） | テスト（`test/config/coding-rules.test.ts`） |
+| 型の主張（`as`）・`!` を使わない（4.） | ESLint `@typescript-eslint/consistent-type-assertions`・`no-non-null-assertion` |
+| ESLint の例外には決まりの名前と理由を書く（4.）。要らなくなった例外を残さない | テスト（`coding-rules.test.ts`）、ESLint の `reportUnusedDisableDirectives` |
+| 画面の文言を部品に直接書かない（4.）。`src/renderer/i18n/` とテストは除く | ESLint `react/jsx-no-literals`、`no-restricted-syntax`（日本語の文字列。開発者向けの例外のメッセージは除く） |
+| 部品は関数で書き、1ファイルに1つ（1.・7.） | ESLint `no-restricted-syntax`・`react/no-multi-comp` |
+| 色・大きさの値を直接書かない（7.）。`style` で直接書かない | テスト（`coding-rules.test.ts`。CSS の色と px・rem・em。罫線とフォーカスの輪の 1px・2px は通す）、ESLint `react/forbid-dom-props`・`forbid-component-props` |
+| client secret をコードに置かない（security-rules.md S-16） | テスト（`coding-rules.test.ts`） |
+| npm の部品は build-plan.md 10. の表にあるものだけ（1.） | テスト（`test/config/dependencies.test.ts`）。表を直さずに部品を足すと落ちる |
+| GitHub Actions の権限・Action の SHA 固定・秘密の値・`pull_request_target`（security-rules.md S-12） | テスト（`test/config/workflows.test.ts`） |
+| 上の ESLint の決まりが効いていること | テスト（`test/config/lint-rules.test.ts`。架空のコードで確かめる） |
+| 書式が Prettier のとおり（`docs/`・`*.md` は除く） | CI（`npm run format:check`。⑬ B0 から） |
+| GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い） | テスト（security-rules.md S-07。S2 から） |
 | 契約・判定（`src/shared/`・`src/main/core/`）を変えるときは、文書か変更要求を同じ PR で直す | CI（`scripts/check-contract-docs.ts`。build-plan.md 6.3。⑬ の凍結で足した） |
-| 凍結した契約・判定・トークンを AI が書き換えるときは、技術者に確認が出る | Claude Code の `.claude/settings.json` の `permissions.ask`（build-plan.md 6.3） |
+| 決まり（検査の設定・テスト）を変えたら、PR の本文で申告する | CI（`scripts/check-guard-changes.ts`。build-plan.md 6.3） |
+| 凍結した契約・判定・トークン、検査の設定・テストを AI が書き換えるときは、技術者に確認が出る | Claude Code の `.claude/settings.json` の `permissions.ask`（build-plan.md 6.3） |
+
+- 決まりを変える（緩める・強める・例外を足す）ときは、技術者に聞く。変えたら PR の本文の「決まり（検査）を変えた」に印を付け、理由を書く
 
 ---
 
 ## 10. PR のコードレビューで見るもの（機械に載せないもの）
 
-AI が作った変更は PR にし、技術者が次の観点で見てから `main` に入れる（DR-14）。PR の説明の雛形（`.github/pull_request_template.md`）に、この表をチェックリストとして置く（⑬ で作る）。
+AI が作った変更は PR にし、技術者が次の観点で見てから `main` に入れる（DR-14）。PR の説明の雛形（`.github/pull_request_template.md`）に、この表をチェックリストとして置く。**機械で確かめられるものは 9. に移し、ここには残さない**（⑭ S1 の後に、色・文言・名前・HTML・Actions の権限を 9. に移した）。
 
-| 観点 | 根拠 |
-| --- | --- |
-| 色・大きさの値を直接書いていない（design-system.md のトークンだけ） | 7.、design-system.md 5. |
-| 画面の文言を部品に直接書いていない（`i18n/` を使う） | 4. |
-| `notification` を単独で名前に使っていない | 3. |
-| GitHub に書き込む呼び出し・client secret・トークンの露出が無い | security-rules.md S-01・S-02・S-16 |
-| GitHub から取った文字を HTML として扱っていない | security-rules.md S-05 |
-| Hardened Runtime・許可（entitlements）・GitHub Actions の権限を緩めていない | security-rules.md S-12・S-18 |
-| `src/main/store/` の変更で、出来事と取り込みの記録を同じ書き込みで保存している | domain-model.md 7. I-5 |
-| 文書の追従ができている（直した文書が PR の説明にある） | 6. |
+| 観点 | 根拠 | 機械に移せない理由 |
+| --- | --- | --- |
+| 決まり（検査）の変更と、例外（`eslint-disable`）の理由が妥当 | 9. | 理由が妥当かは判断 |
+| GitHub に書き込む呼び出し・トークンの露出が無い | security-rules.md S-01・S-02 | 書き込みは S2 からテストで確かめる（S-07）。トークンがどこへ流れるかは読んで確かめる |
+| `src/main/store/` の変更で、出来事と取り込みの記録を同じ書き込みで保存している | domain-model.md 7. I-5 | テスト（`events-store.test.ts`）はあるが、テストを弱めていないかは読んで確かめる |
+| Hardened Runtime・許可（entitlements）を緩めていない | security-rules.md S-18 | 配布の設定は S7 で作る。作ったら設定を読むテストに移す |
+| 文書の追従ができている（直した文書が PR の説明にあり、中身が合っている） | 6. | 直したかどうかは一部 CI で見られる（契約・判定）が、中身が合っているかは判断 |
