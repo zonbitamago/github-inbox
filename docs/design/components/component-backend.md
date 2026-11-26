@@ -126,6 +126,30 @@ src/
   renderer/               component-frontend.md
 ```
 
+### 3.1 読んでよい向き（⑭ S1 の後に足した。AI案を技術者が確かめる）
+
+フォルダが import してよい先。ここに無い向きは CI の構造の検査（dependency-cruiser。`.dependency-cruiser.cjs`）が止める。**新しいフォルダや向きが要るときは、先にこの表を直す**（coding-standards.md 2.）。同じフォルダの中と `src/shared/` は、どこからでも読んでよい。npm の部品・Node.js・Electron を読んでよいかは ESLint で見る（coding-standards.md 9.）。
+
+| フォルダ | 読んでよい先 | 理由 |
+| --- | --- | --- |
+| `src/shared/` | （`src/shared/` の中だけ） | 画面とメインの両方が読む契約 |
+| `src/preload/` | `src/shared/` | 画面に出すのは契約の2つの関数だけ（ADR-007） |
+| `main/index.ts` | `main/` の下の、この表にあるフォルダ | 部品を作ってつなぐ組み立て |
+| `main/core/` | （無し） | I/O を持たない判定（ADR-011） |
+| `main/log/` | `core/` | 数の決まり（7日など）を読む |
+| `main/store/` | `core/`、`log/` | |
+| `main/github/` | `core/`、`log/` | GitHub につなぐ一番下の層。トークンは `auth/` を読まず、組み立てから受け取る（4.） |
+| `main/auth/` | `github/`、`store/`、`core/`、`log/` | トークンを扱う唯一の場所。**`auth/` を読めるのは組み立てだけ**なので、トークンが外に出る道を構造で塞ぐ |
+| `main/notify/` | `core/`、`log/` | |
+| `main/ingest/` | `github/`、`store/`、`notify/`、`core/`、`log/` | 取り込みの1回分（問い合わせ → 分解 → 保存 → デスクトップ通知） |
+| `main/pr-list/` | `github/`、`core/`、`log/` | |
+| `main/app/` | `github/`、`core/`、`log/` | 新しい版の確認（`github/releases.ts`）と URL の検査（`core/url-guard.ts`） |
+| `main/ipc/` | `log/` | 受け口は契約だけを見る。各部品とは組み立てがつなぐ |
+
+- 画面（`src/renderer/`）とメイン（`src/main/`）・preload は、お互いを読まない（component-frontend.md 7.）
+- 循環した import をしない。読み先の見つからない import をしない
+- テスト（`*.test.ts`）は対象の外にする（テストの読み先は ESLint で見る）
+
 ---
 
 ## 4. 部品ごとの役割

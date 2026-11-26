@@ -47,7 +47,7 @@
 10. **判定は `src/main/core/` に、テストを先に**: 出来事の分解・種類・自分待ちの理由・デスクトップ通知を出すか・URL の検査は、I/O を持たない関数として `src/main/core/` に書き、先にテストを書く（ADR-011、test-conventions.md 4.1）
 11. **コミット・push・PR は頼まれたときだけ**行う。作業はブランチで行い、`main` には CI が通り技術者が見た PR だけを入れる（coding-standards.md 5.・10.）
 12. **文書の追従**: コードや設定を変えたら、関係する設計書・README・AGENTS.md・CLAUDE.md を直す必要があるかを確かめ、要るなら同じ作業で直す。後の工程で前の文書の「未定」を決めたら、その「未定」の欄も直す。完了を報告するときは、直した文書を挙げるか、直す必要が無い理由を1行で書く
-13. **決まり（検査）を緩めない**: CI を通すために ESLint の設定・`test/config/`・`test/contract/`・`scripts/check-*.ts`・`.github/` を変えない。決まりを1か所だけ外すときは、`eslint-disable-next-line <決まりの名前> -- <理由>` と書く。決まりそのものを変えたいときは技術者に聞く。変えたら PR の本文で申告する（coding-standards.md 9.、build-plan.md 6.3）
+13. **決まり（検査）を緩めない**: CI を通すために ESLint の設定・構造の検査の設定（`.dependency-cruiser.cjs`）・`test/config/`・`test/contract/`・`scripts/check-*.ts`・`.github/` を変えない。決まりを1か所だけ外すときは、`eslint-disable-next-line <決まりの名前> -- <理由>` と書く。決まりそのものを変えたいときは技術者に聞く。変えたら PR の本文で申告する（coding-standards.md 9.、build-plan.md 6.3）
 
 ## 特に守る範囲
 

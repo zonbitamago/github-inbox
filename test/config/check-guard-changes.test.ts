@@ -45,6 +45,7 @@ describe('検査の設定・テストの変更の申告', () => {
 
   it.each([
     ['eslint.config.mjs', true],
+    ['.dependency-cruiser.cjs', true],
     ['.prettierrc.json', true],
     ['tsconfig.web.json', true],
     ['vitest.config.mts', true],

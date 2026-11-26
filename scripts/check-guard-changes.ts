@@ -22,6 +22,7 @@ export interface GuardChangesResult {
 /** 検査の設定・テスト。ここを変えると、機械で強制する決まりが変わる */
 const GUARD_PATTERNS = [
   /^eslint\.config\.mjs$/,
+  /^\.dependency-cruiser\.cjs$/,
   /^\.prettier(?:rc\.json|ignore)$/,
   /^tsconfig(?:\.[\w-]+)?\.json$/,
   /^vitest\.config\.mts$/,

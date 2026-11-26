@@ -7,6 +7,7 @@
       "Edit(/docs/design/components/domain-model.md)",
       "Edit(/src/renderer/styles/tokens.css)",
       "Edit(/eslint.config.mjs)",
+      "Edit(/.dependency-cruiser.cjs)",
       "Edit(/.prettierrc.json)",
       "Edit(/.prettierignore)",
       "Edit(/tsconfig*.json)",

@@ -33,6 +33,7 @@
 ## 2. 置き場所と境界
 
 - フォルダの構成は component-backend.md 3. と component-frontend.md 7. に従う。**新しいフォルダを作るときは、先にその文書を直す**
+- どのフォルダがどこを import してよいかは、component-backend.md 3.1 と component-frontend.md 7. の「読んでよい向き」の表に従う。表に無い向き・循環した import は、構造の検査（dependency-cruiser）が止める
 - `src/main/core/` は I/O を持たない（ネットワーク・ファイル・時計・Electron・`process` に触れない）。今の時刻が要る関数は、引数で `now` を受け取る（ADR-011）。詳しくは `src/main/core/CLAUDE.md`
 - `src/shared/` は画面とメインの契約。**文書（domain-model.md・ipc-contract.md）を先に直してから**コードを直す。詳しくは `src/shared/CLAUDE.md`
 - GitHub に問い合わせるのは `src/main/github/` だけ。使う API は github-api.md にあるものだけ。足すときは文書を先に直す
@@ -120,6 +121,7 @@
 | `src/main/core/` で時計（`Date.now()`・引数なしの `new Date()`）・乱数・`process`・タイマーを使わない（2.） | ESLint `no-restricted-syntax`・`no-restricted-globals` |
 | `src/renderer/` から `electron`・`node:*` を import しない | ESLint `no-restricted-imports` |
 | 画面の Feature どうしの import をしない | ESLint `no-restricted-imports` |
+| どのフォルダがどこを import してよいか（2.）・循環した import をしない・読み先の見つからない import をしない | 構造の検査（dependency-cruiser。`.dependency-cruiser.cjs`、`npm run check:structure`）。Java の ArchUnit にあたる。決まりが効いていることはテスト（`test/config/structure-rules.test.ts`）で確かめる |
 | GitHub から取った文字を HTML として扱わない（`dangerouslySetInnerHTML`・`innerHTML`・`insertAdjacentHTML` など） | ESLint `react/no-danger`・`no-restricted-syntax` |
 | `console` を使わない（ログの仕組みを使う） | ESLint `no-console` |
 | `shell.openExternal` を `src/main/app/external.ts` 以外で呼ばない | ESLint `no-restricted-syntax` |
@@ -136,6 +138,7 @@
 | npm の部品は build-plan.md 10. の表にあるものだけ（1.） | テスト（`test/config/dependencies.test.ts`）。表を直さずに部品を足すと落ちる |
 | GitHub Actions の権限・Action の SHA 固定・秘密の値・`pull_request_target`（security-rules.md S-12） | テスト（`test/config/workflows.test.ts`） |
 | 上の ESLint の決まりが効いていること | テスト（`test/config/lint-rules.test.ts`。架空のコードで確かめる） |
+| 書式が Prettier のとおり（`docs/`・`*.md` は除く） | CI（`npm run format:check`。⑬ B0 から） |
 | GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い） | テスト（security-rules.md S-07。S2 から） |
 | 契約・判定（`src/shared/`・`src/main/core/`）を変えるときは、文書か変更要求を同じ PR で直す | CI（`scripts/check-contract-docs.ts`。build-plan.md 6.3。⑬ の凍結で足した） |
 | 決まり（検査の設定・テスト）を変えたら、PR の本文で申告する | CI（`scripts/check-guard-changes.ts`。build-plan.md 6.3） |

@@ -40,6 +40,8 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: node scripts/check-guard-changes.ts
       - run: npm run lint
+      # コードの構造（どのフォルダがどこを読んでよいか・循環）。component-backend.md 3.1、component-frontend.md 7.
+      - run: npm run check:structure
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run test:coverage

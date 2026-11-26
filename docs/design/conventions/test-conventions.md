@@ -30,7 +30,7 @@
 | 契約 | `test/contract/` |
 | E2E | `test/e2e/` |
 | 記録した GitHub の応答 | `test/fixtures/github/`（3.） |
-| ビルドの設定（配布物の CSP など）と、決まりの検査（ファイル名・CSS の値・npm の部品・GitHub Actions・ESLint の決まりが効いていること。coding-standards.md 9.） | `test/config/`（⑬ B0 で足し、⑭ S1 の後に広げた。変えるときは PR で申告する。build-plan.md 6.3） |
+| ビルドの設定（配布物の CSP など）と、決まりの検査（ファイル名・CSS の値・npm の部品・GitHub Actions・ESLint と構造の検査の決まりが効いていること。coding-standards.md 9.） | `test/config/`（⑬ B0 で足し、⑭ S1 の後に広げた。変えるときは PR で申告する。build-plan.md 6.3） |
 | テストの補助（文書の表を読むなど） | `test/support/`（⑬ B1 で足した） |
 | 記録と置き換えの道具 | `scripts/fixtures/`（⑬ B2 で足した。テストではなく開発の道具） |
 | 手動のチェックリスト | `docs/build/manual-checklist.md`（⑬ で作る。試作のチェックリストを広げる） |

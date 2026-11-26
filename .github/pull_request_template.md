@@ -18,7 +18,7 @@
 ## 決まり（検査）
 
 - [ ] 決まり（検査）を変えた。理由と、緩めたか強めたかを上に書いた
-  <!-- eslint.config.mjs・test/config/・test/contract/・scripts/check-*.ts・.github/・.claude/settings.json・tsconfig・vitest・Prettier の設定・package.json の scripts を変えたら印を付ける。印が無いと CI が落ちる（build-plan.md 6.3） -->
+  <!-- eslint.config.mjs・.dependency-cruiser.cjs・test/config/・test/contract/・scripts/check-*.ts・.github/・.claude/settings.json・tsconfig・vitest・Prettier の設定・package.json の scripts を変えたら印を付ける。印が無いと CI が落ちる（build-plan.md 6.3） -->
   <!-- 例外（eslint-disable）は、決まりの名前と -- の後の理由を書く。理由は技術者が見る（coding-standards.md 4.） -->
 
 ## 技術者が見ること（coding-standards.md 10.。機械で確かめられないものだけ）

@@ -198,6 +198,16 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // 構造の検査の設定（dependency-cruiser が CommonJS で読む）
+    files: ['.dependency-cruiser.cjs'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      sourceType: 'commonjs',
+      globals: globals.node,
+    },
+  },
+  {
     files: ['src/main/app/external.ts'],
     rules: { 'no-restricted-syntax': ['error', ...HTML_SINKS] },
   },
