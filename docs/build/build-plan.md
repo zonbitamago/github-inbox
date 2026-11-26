@@ -103,13 +103,13 @@ design-review.md の「進める条件」2. と risk-register.md 2. の申し送
 
 | # | 作業 | 誰が | いつまでに | 結果を書く所 |
 | --- | --- | --- | --- | --- |
-| 0-1 | GitHub に `zonbitamago/github-inbox`（public）を作り、secret scanning と push protection を有効にする。最初の push で `main` ができたら、`main` を保護する（PR を必須、CI の成功を必須。承認の数は求めない。1人のため）（2026-11-26 済み。リポジトリを作った。secret scanning と push protection は有効なことを API で確かめた。`main` の保護は最初の push の後） | 技術者 | 作るのは最初の push の前、保護はその直後 | security-rules.md 2. の #5 |
+| 0-1 | GitHub に `zonbitamago/github-inbox`（public）を作り、secret scanning と push protection を有効にする。最初の push で `main` ができたら、`main` を保護する（PR を必須、CI の成功を必須。承認の数は求めない。1人のため）（2026-11-26 済み。リポジトリを作った。secret scanning と push protection は有効なことを API で確かめた。`main` の保護は最初の push の後）（2026-11-26 `main` の保護も済み。ルールセットで PR と CI の `check` を必須にした） | 技術者 | 作るのは最初の push の前、保護はその直後 | security-rules.md 2. の #5 |
 | 0-2 | 禁止語リスト（`.forbidden-words`。1行1語。`.gitignore` に入れる）を書く（2026-11-26 案を作った（53語）。技術者が見て直す。案での検査は0件） | 技術者 | 最初のコミットの前（B2 の記録した応答を入れる前） | — |
 | 0-3 | このリポジトリのコミットの作成者のメールアドレスを GitHub の noreply のものにする（`git config user.email`）（2026-11-26 済み。このリポジトリだけ `git config --local` で noreply にした） | 技術者 | 最初のコミットの前 | security-rules.md 2. の #4 |
 | 0-4 | OAuth App を登録する（auth-flow.md 1.。「Enable Device Flow」をオン）。client ID を技術者に渡す | 依頼者 | S2 の前 | build-and-release.md 6.、`src/main/auth/config.ts` |
 | 0-5 | **R-02・R-03 の確認**: 0-4 の OAuth App のデバイスフローで取ったトークン（`repo notifications`）で、(1) `is:pr involves:@me` の検索の件数とエラーの件数を、gh CLI のトークンでの結果と比べる（会社のリポジトリを読めるか）。(2) `GET /user/teams` が読めるか。AI が確かめるための使い捨ての小さな仕組みを用意し、**依頼者が自分の端末で `!` を付けて動かす**（トークンが AI の会話に入らないように。出すのは件数だけ） | 依頼者・AI | S2 の前（認証を作る前。DR-08） | ADR-004（OAuth を既定のままか、PAT を既定にするか）、domain-model.md 10. の #1、risk-register.md R-02・R-03 |
 | 0-6 | **B2 の記録**（2026-11-26 済み。#3 は CR-002 で不要になり、#5 は確かめた）: gh CLI で読み取りだけの問い合わせを行い、応答をリポジトリの外（作業用の一時フォルダ）に置き、架空のデータに置き換えたものだけを `test/fixtures/github/` に置く。置き換えの対応表はリポジトリに入れない。domain-model.md 10. の #3・#5 を確かめる | AI | B3 の前 | domain-model.md 10.、risk-register.md R-04 |
-| 0-7 | **R-05**: 本リポジトリの CI の実行で届く GitHub の通知（`ci_activity`）とワークフロー実行を、読み取りだけで記録する。CI を動かす push は技術者か、技術者に頼まれた AI が行う | AI（記録）・技術者（push） | 0-1 と B0 の CI の後。S3 の前 | domain-model.md 10. の #2、risk-register.md R-05 |
+| 0-7 | **R-05**: 本リポジトリの CI の実行で届く GitHub の通知（`ci_activity`）とワークフロー実行を、読み取りだけで記録する。CI を動かす push は技術者か、技術者に頼まれた AI が行う（2026-11-26 確かめた: 本リポジトリの CI（利用者が起動し、成功2回）では GitHub の通知は届いていない。GitHub の既定の設定が「失敗したワークフローだけ知らせる」ためと考えられる。技術者が決めた進め方: 技術者が GitHub の通知の設定（Settings → Notifications → System の Actions）で「Only notify for failed workflows」を外し、次に CI が動いたときに届いたものを AI が読み取りだけで記録する。利用者への案内（F-36 (3)）が正しいかも、あわせて確かめる） | AI（記録）・技術者（push） | 0-1 と B0 の CI の後。S3 の前 | domain-model.md 10. の #2、risk-register.md R-05 |
 | 0-8 | 手動のチェックリスト（`docs/build/manual-checklist.md`。試作のチェックリストを広げる）を作る | AI | S4 の前 | test-conventions.md 2. |
 | 0-9 | アプリのアイコンを決める | 依頼者 | S7 の前（決まるまでは Electron の既定のアイコン） | build-and-release.md 6. |
 | 0-10 | 公開リポジトリのライセンスを決める（設計で決めていない。決めるまでは `package.json` に書かない）（2026-11-26 済み。MIT。著作権者は zonbitamago。コミットの名前も、このリポジトリだけ zonbitamago にした） | 技術者 | 最初の push の前 | build-and-release.md 1.、`LICENSE` |
@@ -140,17 +140,17 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 
 | 仕組み | 中身 | 層 |
 | --- | --- | --- |
-| Claude Code の確認設定 | `.claude/settings.json` の `permissions.ask` に、`src/shared/**`・`src/main/core/**`（テストを除く）・`docs/design/api-contract/**`・`docs/design/components/domain-model.md`・`src/renderer/styles/tokens.css` への Edit・Write を入れる。AI が触ろうとすると、技術者に確認が出る | 入力制約 |
-| CI での文書との対応の検査 | PR で `src/shared/**` か `src/main/core/**`（`*.test.ts` を除く）が変わっているのに、domain-model.md・`docs/design/api-contract/**`・`docs/build/change-requests/**` のどれも変わっていなければ CI を失敗させる。整理だけの変更は、PR のひな形の「契約・判定の変更ではない（整理だけ）」に印を付ければ通す（印は技術者が PR で見る） | 機械的検証 |
+| Claude Code の確認設定 | `.claude/settings.json` の `permissions.ask` に、`src/shared/**`・`src/main/core/**`（テストも含む。確認の決まりから一部だけを外す書き方の動きがはっきりしないため）・`docs/design/api-contract/**`・`docs/design/components/domain-model.md`・`src/renderer/styles/tokens.css` への Edit を入れる（`Edit` の決まりは Write にも効く。パスは `/` から書き、リポジトリの直下からの位置にする）。AI が触ろうとすると、技術者に確認が出る。リポジトリの直下で立ち上げた Claude Code に効く | 入力制約 |
+| CI での文書との対応の検査 | PR で `src/shared/**` か `src/main/core/**`（`*.test.ts` と CLAUDE.md を除く）が変わっているのに、domain-model.md・`docs/design/api-contract/**`・`docs/build/change-requests/**` のどれも変わっていなければ CI を失敗させる。整理だけの変更は、PR のひな形の「契約・判定の変更ではない（整理だけ）」に印を付ければ通す（印は技術者が PR で見る。本文を直すと CI が動き直す）。`scripts/check-contract-docs.ts`、`ci.yml` | 機械的検証 |
 
-- 2つとも coding-standards.md 9. に足す（凍結のとき）
+- 2つとも coding-standards.md 9. に足した（2026-11-26。凍結のとき）
 - Claude Code 以外のエージェントには、AGENTS.md 行動ルール 8 と CI の検査が効く
 
 ### 6.4 凍結の記録
 
 | 日付 | 何を | 版（`main` のコミット） | 誰が |
 | --- | --- | --- | --- |
-| 未定（barrier の最後の PR を入れたとき） | 6.1 の全部 | 未定 | 技術者 |
+| 2026-11-26 | 6.1 の全部（PR #1 を `main` に入れた） | `dd8bbb2` | 技術者 |
 
 ---
 
@@ -228,9 +228,9 @@ coding-standards.md 1.・9. と test-conventions.md 1. で名前が出ている�
 | --- | --- |
 | build-plan.md がある（barrier の範囲、スライス、オーナー、統合ポイント） | このファイル。統合ポイントは各スライスの PR（直列のため、スライスごとに `main` で統合される） |
 | barrier の範囲が「依存の広さ」と「変えたときの波及」で判断され、根拠が残っている | 3.1 |
-| barrier が直列で実装され、動く土台になっている | B0 済み（2026-11-26。lint・型検査・テスト・ビルドが通り、開発中と配布物の両方で画面が CSP の違反なしに開く）。B1 済み（2026-11-26。`src/shared/`。文書の表とコードの区分値・チャンネルを突き合わせる契約のテストを `test/contract/` に置いた）。B2 済み（2026-11-26。`test/fixtures/github/` に9件。ただし禁止語リスト（0-2）での検査は未。CI の結果（0-7）は後で足す）。B4 済み（2026-11-26。`tokens.css`。design-system.md のトークンと過不足が無いことをテストで確かめる）。B3 済み（2026-11-26。M-0〜M-9・PT・WR・DN・URL の検査・メンションの照合。テスト150件、core の分岐の網羅 100%）。ただし CI の結果の分解（`ci_activity`）は 0-7 の記録の後 |
-| 契約が凍結され、版が記録されている | 未（6.4） |
+| barrier が直列で実装され、動く土台になっている | **済み**（PR #1 を 2026-11-26 に `main` に入れた）。B0 済み（2026-11-26。lint・型検査・テスト・ビルドが通り、開発中と配布物の両方で画面が CSP の違反なしに開く）。B1 済み（2026-11-26。`src/shared/`。文書の表とコードの区分値・チャンネルを突き合わせる契約のテストを `test/contract/` に置いた）。B2 済み（2026-11-26。`test/fixtures/github/` に9件。ただし禁止語リスト（0-2）での検査は未。CI の結果（0-7）は後で足す）。B4 済み（2026-11-26。`tokens.css`。design-system.md のトークンと過不足が無いことをテストで確かめる）。B3 済み（2026-11-26。M-0〜M-9・PT・WR・DN・URL の検査・メンションの照合。テスト150件、core の分岐の網羅 100%）。ただし CI の結果の分解（`ci_activity`）は 0-7 の記録の後 |
+| 契約が凍結され、版が記録されている | 済み（6.4。`dd8bbb2`） |
 | 契約を変えたくなったときの手続きが決まり、共有されている | 6.2。AGENTS.md に書く |
-| ディレクトリの所有が割り当てられ、機械で守れる形になっている | 6.3（凍結のときに入れる）。オーナーは全部が技術者 |
+| ディレクトリの所有が割り当てられ、機械で守れる形になっている | 済み（6.3 の2つを入れた）。オーナーは全部が技術者 |
 | 並列度が、独立したオーナーにできるスライスの数と統合のレビューの余力から決められている | 1.（並列度1） |
 | 既存の改修の場合、回帰テストと切り戻しの手順がある | 対象外（新規開発） |

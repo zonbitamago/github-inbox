@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "ask": [
+      "Edit(/src/shared/**)",
+      "Edit(/src/main/core/**)",
+      "Edit(/docs/design/api-contract/**)",
+      "Edit(/docs/design/components/domain-model.md)",
+      "Edit(/src/renderer/styles/tokens.css)"
+    ]
+  }
+}
