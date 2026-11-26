@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/notifications?all=true&per_page=50",
+    "headers": {
+      "If-None-Match": "W/\"17837c4ba7020c3b2301138f7488d578ae55d1101bf1de943b3f60599c22cb9d\""
+    }
+  },
+  "response": {
+    "status": 304,
+    "headers": {
+      "etag": "\"918396d27ef5cd448db4b6189a306ca253fa8106432d0fc64d1f1d28593bb9a2\"",
+      "last-modified": "Fri, 30 Jan 2026 23:47:29 GMT",
+      "x-poll-interval": "60",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4986",
+      "x-ratelimit-reset": "1769821441",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "14"
+    },
+    "body": null
+  }
+}

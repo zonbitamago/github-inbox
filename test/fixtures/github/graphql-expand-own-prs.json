@@ -1,0 +1,533 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/graphql",
+    "body": {
+      "query": "query Expand($since: DateTime!, $o0: String!, $r0: String!, $n0: Int!, $o1: String!, $r1: String!, $n1: Int!) {\n  rateLimit { cost remaining resetAt }\n  t0: repository(owner: $o0, name: $r0) {\n    pullRequest(number: $n0) { ...PrExpand }\n  }\n  t1: repository(owner: $o1, name: $r1) {\n    pullRequest(number: $n1) { ...PrExpand }\n  }\n}\n\nfragment PrExpand on PullRequest {\n  id number title url state isDraft createdAt body\n  author { login __typename }\n  viewerLatestReview { state }\n  timelineItems(since: $since, first: 100,\n    itemTypes: [ISSUE_COMMENT, REVIEW_REQUESTED_EVENT, ASSIGNED_EVENT]) {\n    pageInfo { hasNextPage endCursor }\n    nodes {\n      __typename\n      ... on IssueComment { id url createdAt body author { login __typename } }\n      ... on ReviewRequestedEvent {\n        id createdAt actor { login __typename }\n        requestedReviewer { __typename ... on User { login } }\n      }\n      ... on AssignedEvent {\n        id createdAt actor { login __typename }\n        assignee { __typename ... on User { login } }\n      }\n    }\n  }\n  reviews(last: 50) {\n    pageInfo { hasPreviousPage startCursor }\n    nodes {\n      id url state createdAt submittedAt body author { login __typename }\n      comments(first: 20) { nodes { url body replyTo { id } } }\n    }\n  }\n}\n",
+      "variables": {
+        "since": "2026-01-01T00:00:00Z",
+        "o0": "example-org",
+        "r0": "app",
+        "n0": 101,
+        "o1": "example-org",
+        "r1": "data",
+        "n1": 139
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4972",
+      "x-ratelimit-reset": "1769821269",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "28"
+    },
+    "body": {
+      "data": {
+        "rateLimit": {
+          "cost": 1,
+          "remaining": 4972,
+          "resetAt": "2026-01-31T01:01:09Z"
+        },
+        "t0": {
+          "pullRequest": {
+            "id": "PR_nxduzdVbTjmaCuCDlOddDi",
+            "number": 101,
+            "title": "ログイン画面の文言を直す",
+            "url": "https://github.com/example-org/app/pull/101",
+            "state": "OPEN",
+            "isDraft": false,
+            "createdAt": "2026-01-30T22:52:16Z",
+            "body": "ここの条件は逆ではないでしょうか。\n\n## 直しました。もう一度見てください。\n\n* テストを足しておきます。\n\n## この名前のほうが分かりやすいと思います。\n",
+            "author": {
+              "login": "alice",
+              "__typename": "User"
+            },
+            "viewerLatestReview": {
+              "state": "COMMENTED"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_d9Z_LBTMWTFR7f3N2wCwKexZoaN8drLbxY",
+                  "createdAt": "2026-01-30T22:52:17Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_hJEZugXfEQmvB4K__fi--f",
+                  "url": "https://github.com/example-org/app/pull/101#issuecomment-3838252224",
+                  "createdAt": "2026-01-30T22:52:49Z",
+                  "body": "### 了解です。\n\n手元で動くことを確かめました。\nこちらは別の PR で対応します。\n念のため確認させてください。\nここの条件は逆ではないでしょうか。\n直しました。もう一度見てください。\nテストを足しておきます。",
+                  "author": {
+                    "login": "example-bot",
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_U8l5EGfeWhfsn1DA6wu5ksGa048ETiRQGe",
+                  "createdAt": "2026-01-30T22:55:14Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_0ns62eSKPIMfK8a2LH_MHhhOnEa7gHaQRp",
+                  "createdAt": "2026-01-30T23:07:53Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_IAM62i5VhnW5CBDGpuckMJU3i9MaVjZTAF",
+                  "createdAt": "2026-01-30T23:21:13Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "dave"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_veAl9HZwOFos2zm7u9EMEFtIfY88NVGza3",
+                  "createdAt": "2026-01-30T23:21:13Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "grace"
+                  }
+                }
+              ]
+            },
+            "reviews": {
+              "pageInfo": {
+                "hasPreviousPage": false,
+                "startCursor": "example"
+              },
+              "nodes": [
+                {
+                  "id": "PRR_L4VTS4uKKcgxgjceSvxavg",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-4577530179",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T22:52:50Z",
+                  "submittedAt": "2026-01-30T22:52:50Z",
+                  "body": "\n\nこの名前のほうが分かりやすいと思います。",
+                  "author": {
+                    "login": "example-bot",
+                    "__typename": "Bot"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/101#discussion_r5339292827",
+                        "body": "了解です。\n\n手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n念のため確認させてください。\n\nここの条件は逆ではないでしょうか。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/app/pull/101#discussion_r6618558806",
+                        "body": "直しました。もう一度見てください。\n\nテストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n了解です。\n\n手元で動くことを確かめました。",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_qypsPTCbmTYnOZqQDwEcZh",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-7418918866",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T22:55:28Z",
+                  "submittedAt": "2026-01-30T22:55:28Z",
+                  "body": "こちらは別の PR で対応します。\n\n### 念のため確認させてください。\n\nここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n",
+                  "author": {
+                    "login": "example-bot-2",
+                    "__typename": "Bot"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_FUGkD27REPm6GboLVJtJKy",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-8882761924",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T23:08:01Z",
+                  "submittedAt": "2026-01-30T23:08:01Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/101#discussion_r9698514895",
+                        "body": "テストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n\n了解です。",
+                        "replyTo": {
+                          "id": "PRRC_YjO0PQgxSV4ow-GJRoKrRF"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_v94SXgR--N-lxPDTzL8gyV",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-1114746353",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T23:08:03Z",
+                  "submittedAt": "2026-01-30T23:08:03Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/app/pull/101#discussion_r2379219307",
+                        "body": "手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n\n念のため確認させてください。",
+                        "replyTo": {
+                          "id": "PRRC_RE4bB1Nwuog_Jm_EZUokn0"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_g17cPr1MCP9oXq5ncAj4eP",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-3845744301",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-30T23:11:13Z",
+                  "submittedAt": "2026-01-30T23:11:13Z",
+                  "body": "ここの条件は逆ではないでしょうか。\n\n### 直しました。もう一度見てください。\n\nテストを足しておきます。\n\nこの名前のほうが分かりやすいと思います。\n",
+                  "author": {
+                    "login": "example-bot-2",
+                    "__typename": "Bot"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_gJXrzveTc_kxk8PGQV_zcL",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-4202739633",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-30T23:35:35Z",
+                  "submittedAt": "2026-01-30T23:35:35Z",
+                  "body": "",
+                  "author": {
+                    "login": "dave",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_53chj8Cq0TWPqR5cmreDtd",
+                  "url": "https://github.com/example-org/app/pull/101#pullrequestreview-5105879768",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-30T23:47:07Z",
+                  "submittedAt": "2026-01-30T23:47:07Z",
+                  "body": "",
+                  "author": {
+                    "login": "grace",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "t1": {
+          "pullRequest": {
+            "id": "PR_wD5BKwg3Ut77ojMS4A-jHJ",
+            "number": 139,
+            "title": "設定の保存に失敗したときの表示を足す（4）",
+            "url": "https://github.com/example-org/data/pull/139",
+            "state": "MERGED",
+            "isDraft": false,
+            "createdAt": "2026-01-22T00:04:04Z",
+            "body": "\n## 了解です。\n\n* 手元で動くことを確かめました。\n\n## こちらは別の PR で対応します。\n\n念のため確認させてください。",
+            "author": {
+              "login": "alice",
+              "__typename": "User"
+            },
+            "viewerLatestReview": {
+              "state": "COMMENTED"
+            },
+            "timelineItems": {
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "example"
+              },
+              "nodes": [
+                {
+                  "__typename": "AssignedEvent",
+                  "id": "AE_pYZ18F9dKxp4ofWDlmGycpP64B_NW0SaXE",
+                  "createdAt": "2026-01-22T00:04:06Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "assignee": {
+                    "__typename": "User",
+                    "login": "alice"
+                  }
+                },
+                {
+                  "__typename": "IssueComment",
+                  "id": "IC_vbpHV2jiZo04kqvawggfRO",
+                  "url": "https://github.com/example-org/data/pull/139#issuecomment-6127092464",
+                  "createdAt": "2026-01-22T00:04:37Z",
+                  "body": "### ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\nテストを足しておきます。\nこの名前のほうが分かりやすいと思います。\n了解です。\n手元で動くことを確かめました。\nこちらは別の PR で対応します。",
+                  "author": {
+                    "login": "example-bot",
+                    "__typename": "Bot"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_js4KVO9MEA62whzhmDdgxCBDOxSTi1ZpBS",
+                  "createdAt": "2026-01-22T00:18:35Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "grace"
+                  }
+                },
+                {
+                  "__typename": "ReviewRequestedEvent",
+                  "id": "RRE_TP2bHA-NyFjv95ikR0Vuj-5Y2ZnwNxI-8K",
+                  "createdAt": "2026-01-22T00:18:35Z",
+                  "actor": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "requestedReviewer": {
+                    "__typename": "User",
+                    "login": "dave"
+                  }
+                }
+              ]
+            },
+            "reviews": {
+              "pageInfo": {
+                "hasPreviousPage": false,
+                "startCursor": "example"
+              },
+              "nodes": [
+                {
+                  "id": "PRR_TVuoewG5JJvdao2s_Frx1o",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-7829273118",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T01:57:38Z",
+                  "submittedAt": "2026-01-23T02:01:39Z",
+                  "body": "@alice 念のため確認させてください。\nここの条件は逆ではないでしょうか。",
+                  "author": {
+                    "login": "grace",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r8236750125",
+                        "body": "直しました。もう一度見てください。",
+                        "replyTo": null
+                      },
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r9067768262",
+                        "body": "テストを足しておきます。\nこの名前のほうが分かりやすいと思います。",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_VfM7QSx0VK0g62P8KBwlm0",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-1132712940",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T02:13:46Z",
+                  "submittedAt": "2026-01-23T02:13:46Z",
+                  "body": "",
+                  "author": {
+                    "login": "dave",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r2921167634",
+                        "body": "了解です。\n- 手元で動くことを確かめました。\n- こちらは別の PR で対応します。\n- 念のため確認させてください。\n- ここの条件は逆ではないでしょうか。\n\n直しました。もう一度見てください。\n",
+                        "replyTo": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_N_SsMH4sqcca_j0MMN0sUe",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-3885208200",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T19:22:26Z",
+                  "submittedAt": "2026-01-23T19:22:26Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r4087777938",
+                        "body": "テストを足しておきます。\n\n- この名前のほうが分かりやすいと思います。\n- 了解です。",
+                        "replyTo": {
+                          "id": "PRRC_Um_-cNloiy2abVctbwv6nY"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_kJaBJckpfVj2rfamDTHMAZ",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-5105789325",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T19:22:28Z",
+                  "submittedAt": "2026-01-23T19:22:28Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r6288537190",
+                        "body": "手元で動くことを確かめました。\n\nこちらは別の PR で対応します。\n念のため確認させてください。\nここの条件は逆ではないでしょうか。\n直しました。もう一度見てください。\nテストを足しておきます。\nこの名前のほうが分かりやすいと思います。",
+                        "replyTo": {
+                          "id": "PRRC_GfGyMp4bLZbCpEWwdU7rS-"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_cebgqxk9POrFOwL2WiAzdC",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-7975824010",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T19:22:30Z",
+                  "submittedAt": "2026-01-23T19:22:30Z",
+                  "body": "",
+                  "author": {
+                    "login": "alice",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r8904918127",
+                        "body": "了解です。\n\n```\n          # 手元で動くことを確かめました。\n          # こちらは別の PR で対応します。\n```\n\n- 念のため確認させてください。",
+                        "replyTo": {
+                          "id": "PRRC_niIs6jzVKNjmU5rlzKcQ3_"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_loFoDYVC-aeWTdPNJKz0GZ",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-9870909699",
+                  "state": "COMMENTED",
+                  "createdAt": "2026-01-23T20:42:09Z",
+                  "submittedAt": "2026-01-23T20:42:09Z",
+                  "body": "",
+                  "author": {
+                    "login": "dave",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": [
+                      {
+                        "url": "https://github.com/example-org/data/pull/139#discussion_r1449134136",
+                        "body": "ここの条件は逆ではないでしょうか。",
+                        "replyTo": {
+                          "id": "PRRC_niIs6jzVKNjmU5rlzKcQ3_"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PRR_4ABDOi5p66CXVqFvQl9rbl",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-2833399274",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-23T20:46:19Z",
+                  "submittedAt": "2026-01-23T20:46:19Z",
+                  "body": "@alice 直しました。もう一度見てください。\nテストを足しておきます。",
+                  "author": {
+                    "login": "dave",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                },
+                {
+                  "id": "PRR_JnkoDncH-NW59-6G8VS5N1",
+                  "url": "https://github.com/example-org/data/pull/139#pullrequestreview-3356328595",
+                  "state": "APPROVED",
+                  "createdAt": "2026-01-24T20:20:10Z",
+                  "submittedAt": "2026-01-24T20:20:10Z",
+                  "body": "",
+                  "author": {
+                    "login": "grace",
+                    "__typename": "User"
+                  },
+                  "comments": {
+                    "nodes": []
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

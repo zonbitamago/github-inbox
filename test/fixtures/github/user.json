@@ -1,0 +1,54 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/user"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "last-modified": "Fri, 23 Jan 2026 17:38:25 GMT",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4868",
+      "x-ratelimit-reset": "1769817687",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "132"
+    },
+    "body": {
+      "login": "alice",
+      "id": 12092460,
+      "node_id": "skGZRAPeI4usJQOs8SXI",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12092460?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/alice",
+      "html_url": "https://github.com/alice",
+      "followers_url": "https://api.github.com/users/alice/followers",
+      "following_url": "https://api.github.com/users/alice/following{/other_user}",
+      "gists_url": "https://api.github.com/users/alice/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/alice/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/alice/subscriptions",
+      "organizations_url": "https://api.github.com/users/alice/orgs",
+      "repos_url": "https://api.github.com/users/alice/repos",
+      "events_url": "https://api.github.com/users/alice/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/alice/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false,
+      "name": "example",
+      "company": null,
+      "blog": "",
+      "location": null,
+      "email": null,
+      "hireable": null,
+      "bio": null,
+      "twitter_username": null,
+      "notification_email": null,
+      "public_repos": 0,
+      "public_gists": 0,
+      "followers": 0,
+      "following": 0,
+      "created_at": "2016-09-26T08:17:55Z",
+      "updated_at": "2026-01-23T17:38:25Z"
+    }
+  }
+}
