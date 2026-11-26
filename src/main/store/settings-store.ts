@@ -11,20 +11,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /** 足りない項目を既定値で補う（前の版で保存したファイルなど）。知らない項目・範囲の外の値は、そのまま検査で断る */
 function withDefaults(raw: unknown): unknown {
   if (!isRecord(raw)) return raw
-  const notification = raw['desktopNotification']
-  const byType = isRecord(notification) ? notification['byType'] : undefined
+  const desktopNotification = raw['desktopNotification']
+  const byType = isRecord(desktopNotification) ? desktopNotification['byType'] : undefined
   return {
     ...DEFAULT_SETTINGS,
     ...raw,
-    desktopNotification: isRecord(notification)
+    desktopNotification: isRecord(desktopNotification)
       ? {
           ...DEFAULT_SETTINGS.desktopNotification,
-          ...notification,
+          ...desktopNotification,
           byType: isRecord(byType)
             ? { ...DEFAULT_SETTINGS.desktopNotification.byType, ...byType }
             : (byType ?? DEFAULT_SETTINGS.desktopNotification.byType),
         }
-      : (notification ?? DEFAULT_SETTINGS.desktopNotification),
+      : (desktopNotification ?? DEFAULT_SETTINGS.desktopNotification),
   }
 }
 

@@ -182,6 +182,7 @@ export const invokeContract = {
 
 export type InvokeContract = typeof invokeContract
 export type InvokeChannel = keyof InvokeContract
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Object.keys は string[] を返すため。キーは invokeContract のものだけ
 export const INVOKE_CHANNELS = Object.keys(invokeContract) as InvokeChannel[]
 export type InvokeArgs<C extends InvokeChannel> = z.infer<InvokeContract[C]['args']>
 export type InvokeResult<C extends InvokeChannel> = z.infer<InvokeContract[C]['result']>
@@ -201,6 +202,7 @@ export const pushContract = {
 
 export type PushContract = typeof pushContract
 export type PushChannel = keyof PushContract
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Object.keys は string[] を返すため。キーは pushContract のものだけ
 export const PUSH_CHANNELS = Object.keys(pushContract) as PushChannel[]
 export type PushPayload<C extends PushChannel> = z.infer<PushContract[C]>
 

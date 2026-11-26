@@ -50,7 +50,7 @@ afterEach(async () => {
 async function fileContent() {
   return JSON.parse(await readFile(path, 'utf-8')) as {
     events: GitHubEvent[]
-    notifications: Record<string, string>
+    githubNotifications: Record<string, string>
     threads: Record<string, unknown>
   }
 }
@@ -60,7 +60,7 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     const store = new EventsStore(path, createMemoryLogger())
     expect(await store.load(NOW)).toEqual({ recovered: false })
     expect(store.listForDisplay(7, NOW)).toEqual([])
-    expect(store.notifications()).toEqual({})
+    expect(store.githubNotificationCursor()).toEqual({})
   })
 
   it('保存したものを、次に立ち上げたときに読める', async () => {
@@ -69,7 +69,7 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     await first.commit(
       {
         events: [event('IC_1', daysBefore(1))],
-        notifications: { etag: 'W/"abc"', lastSuccessAt: NOW.toISOString() },
+        githubNotifications: { etag: 'W/"abc"', lastSuccessAt: NOW.toISOString() },
         threads: { '1': thread(daysBefore(1)) },
       },
       NOW,
@@ -77,7 +77,10 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     const second = new EventsStore(path, createMemoryLogger())
     await second.load(NOW)
     expect(second.listForDisplay(7, NOW).map((e) => e.id)).toEqual(['IC_1'])
-    expect(second.notifications()).toEqual({ etag: 'W/"abc"', lastSuccessAt: NOW.toISOString() })
+    expect(second.githubNotificationCursor()).toEqual({
+      etag: 'W/"abc"',
+      lastSuccessAt: NOW.toISOString(),
+    })
     expect(second.thread('1')).toEqual(thread(daysBefore(1)))
   })
 
@@ -112,7 +115,7 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     const store = new EventsStore(path, createMemoryLogger())
     await store.load(NOW)
     await store.commit(
-      { events: [event('IC_1', daysBefore(1))], notifications: { etag: 'W/"1"' } },
+      { events: [event('IC_1', daysBefore(1))], githubNotifications: { etag: 'W/"1"' } },
       NOW,
     )
     // 保存先をフォルダにして、書けないようにする
@@ -120,11 +123,11 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     await (await import('node:fs/promises')).mkdir(path)
     await expect(
       store.commit(
-        { events: [event('IC_2', daysBefore(1))], notifications: { etag: 'W/"2"' } },
+        { events: [event('IC_2', daysBefore(1))], githubNotifications: { etag: 'W/"2"' } },
         NOW,
       ),
     ).rejects.toThrow()
-    expect(store.notifications()).toEqual({ etag: 'W/"1"' })
+    expect(store.githubNotificationCursor()).toEqual({ etag: 'W/"1"' })
     expect(store.listForDisplay(30, NOW).map((e) => e.id)).toEqual(['IC_1'])
   })
 
@@ -144,9 +147,15 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
   it('GitHub の通知の問い合わせの記録は、渡した項目だけを変える', async () => {
     const store = new EventsStore(path, createMemoryLogger())
     await store.load(NOW)
-    await store.commit({ notifications: { etag: 'W/"1"', lastSuccessAt: daysBefore(1) } }, NOW)
-    await store.commit({ notifications: { lastSuccessAt: NOW.toISOString() } }, NOW)
-    expect(store.notifications()).toEqual({ etag: 'W/"1"', lastSuccessAt: NOW.toISOString() })
+    await store.commit(
+      { githubNotifications: { etag: 'W/"1"', lastSuccessAt: daysBefore(1) } },
+      NOW,
+    )
+    await store.commit({ githubNotifications: { lastSuccessAt: NOW.toISOString() } }, NOW)
+    expect(store.githubNotificationCursor()).toEqual({
+      etag: 'W/"1"',
+      lastSuccessAt: NOW.toISOString(),
+    })
   })
 
   it('I-4: 立ち上げ時に、発生から30日を過ぎた出来事と、30日動きの無いスレッドの記録を消して保存し直す', async () => {
@@ -159,7 +168,7 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
           event('edge', daysBefore(30)),
           event('new', daysBefore(1)),
         ],
-        notifications: {},
+        githubNotifications: {},
         threads: { old: thread(daysBefore(31)), new: thread(daysBefore(1)) },
       }),
     )
@@ -215,7 +224,7 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
       JSON.stringify({
         schemaVersion: 1,
         events: [event('x', daysBefore(1), { type: 'unknown' as never })],
-        notifications: {},
+        githubNotifications: {},
         threads: {},
       }),
     )
@@ -227,12 +236,12 @@ describe('出来事と取り込みの記録の保存（component-backend.md 7.�
     const store = new EventsStore(path, createMemoryLogger())
     await store.load(NOW)
     await store.commit(
-      { events: [event('IC_1', daysBefore(1))], notifications: { etag: 'W/"1"' } },
+      { events: [event('IC_1', daysBefore(1))], githubNotifications: { etag: 'W/"1"' } },
       NOW,
     )
     await store.clear()
     expect(store.listForDisplay(30, NOW)).toEqual([])
-    expect(store.notifications()).toEqual({})
+    expect(store.githubNotificationCursor()).toEqual({})
     expect(await readdir(dir)).toEqual([])
   })
 

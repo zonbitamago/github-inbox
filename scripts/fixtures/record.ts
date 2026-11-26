@@ -256,20 +256,20 @@ function searchQuery(fields: string): string {
  * GitHub の通知と、変わっていないときの 304 を記録する。
  * 304 は If-None-Match（ETag）で返る。If-Modified-Since では 200 が返った（⑬ B2 で確かめた。CR-003）
  */
-function recordNotifications(dir: string): Recorded {
+function recordGithubNotifications(dir: string): Recorded {
   const path = '/notifications?all=true&per_page=50'
-  const notifications = ghGet(path)
-  save(dir, 'notifications', notifications)
-  const etag = notifications.response.headers['etag']
+  const githubNotifications = ghGet(path)
+  save(dir, 'notifications', githubNotifications)
+  const etag = githubNotifications.response.headers['etag']
   if (etag !== undefined) {
     const notModified = ghGet(path, { 'If-None-Match': etag })
     save(dir, 'notifications-not-modified', notModified)
     console.log(`304 の確認: status ${notModified.response.status}`)
   }
-  return notifications
+  return githubNotifications
 }
 
-interface NotificationThread {
+interface GithubNotificationThread {
   id: string
   reason: string
   updated_at: string
@@ -277,7 +277,7 @@ interface NotificationThread {
   repository: { full_name: string }
 }
 
-function subjectOf(thread: NotificationThread): Subject | null {
+function subjectOf(thread: GithubNotificationThread): Subject | null {
   const match = /\/repos\/([^/]+)\/([^/]+)\/(pulls|issues)\/(\d+)$/.exec(thread.subject.url ?? '')
   if (match === null) {
     return null
@@ -330,8 +330,8 @@ function survey(dir: string): void {
   const teams = ghGet('/user/teams?per_page=100')
   save(dir, 'user-teams', teams)
 
-  const notifications = recordNotifications(dir)
-  const lastModified = notifications.response.headers['etag']
+  const githubNotifications = recordGithubNotifications(dir)
+  const lastModified = githubNotifications.response.headers['etag']
 
   const now = Date.now()
   const boundary = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
@@ -355,9 +355,9 @@ function survey(dir: string): void {
     }),
   )
 
-  const threads = notifications.response.body as NotificationThread[]
+  const threads = githubNotifications.response.body as GithubNotificationThread[]
   const seen = new Set<string>()
-  const subjects: { index: number; subject: Subject; thread: NotificationThread }[] = []
+  const subjects: { index: number; subject: Subject; thread: GithubNotificationThread }[] = []
   threads.forEach((thread, index) => {
     const subject = subjectOf(thread)
     if (subject === null) return
@@ -515,9 +515,9 @@ function recordCi(dir: string, repository: string | undefined): void {
   const viewerRecord = ghGet('/user')
   save(dir, 'user', viewerRecord)
   const viewer = (viewerRecord.response.body as { login: string }).login
-  const notifications = ghGet(`/repos/${repository}/notifications?all=true&per_page=50`)
-  save(dir, 'ci-notifications', notifications)
-  const threads = notifications.response.body as NotificationThread[]
+  const githubNotifications = ghGet(`/repos/${repository}/notifications?all=true&per_page=50`)
+  save(dir, 'ci-notifications', githubNotifications)
+  const threads = githubNotifications.response.body as GithubNotificationThread[]
   const ci = threads.filter((thread) => thread.reason === 'ci_activity')
   // 作られた日付で絞るのは since の前の日から（github-api.md 4.。DR-09）
   const since = ci.map((thread) => thread.updated_at).sort()[0] ?? new Date().toISOString()
@@ -554,7 +554,7 @@ function latestComment(dir: string, name: string | undefined, index: string | un
   const found = meta.subjects.find((item) => item.index === Number(index))
   if (found === undefined) throw new SafeError(`#${index} は分解したスレッドに無い`)
   const threads = (JSON.parse(readFileSync(join(dir, 'notifications.json'), 'utf-8')) as Recorded)
-    .response.body as NotificationThread[]
+    .response.body as GithubNotificationThread[]
   const thread = threads.find((item) => {
     const subject = subjectOf(item)
     return (
@@ -581,7 +581,7 @@ function main(): void {
   if (command === 'survey') {
     survey(dir)
   } else if (command === 'notifications') {
-    recordNotifications(dir)
+    recordGithubNotifications(dir)
   } else if (command === 'expand') {
     expand(dir, rest[0], rest[1], rest.slice(2))
   } else if (command === 'ci') {

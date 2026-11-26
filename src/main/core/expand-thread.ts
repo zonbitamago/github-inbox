@@ -113,7 +113,9 @@ function sourcesOf(subject: ExpandSubject): Source[] {
       kind: { type: 'body' },
     },
   ]
-  for (const item of node.timelineItems.nodes as GhTimelineNode[]) {
+  // PR と Issue で並ぶ種類が違うが、どちらも GhTimelineNode の一部なので、広い型の配列として読む
+  const items: readonly GhTimelineNode[] = node.timelineItems.nodes
+  for (const item of items) {
     if (item.__typename === 'IssueComment') {
       sources.push({
         id: item.id,

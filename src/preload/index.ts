@@ -3,11 +3,15 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { isInvokeChannel, isPushChannel, type GithubInboxApi } from '../shared/ipc-contract'
 
+// GithubInboxApi の関数はチャンネルごとに型が決まる総称の関数で、ipcRenderer の型からは作れないため、型の主張で合わせる。
+// 中身は契約に無いチャンネルを断る。値の検査はメインが契約のスキーマで行う
 const api: GithubInboxApi = {
-  invoke: ((channel: string, ...args: unknown[]) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 総称の関数の型に合わせるため（上の説明）
+  invoke: ((channel: string, ...args: unknown[]): Promise<unknown> => {
     if (!isInvokeChannel(channel)) return Promise.reject(new Error('unknown_channel'))
-    return ipcRenderer.invoke(channel, args[0]) as Promise<unknown>
+    return ipcRenderer.invoke(channel, args[0])
   }) as GithubInboxApi['invoke'],
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 総称の関数の型に合わせるため（上の説明）
   on: ((channel: string, listener: (payload: unknown) => void) => {
     if (!isPushChannel(channel)) throw new Error('unknown_channel')
     const wrapped = (_event: IpcRendererEvent, payload: unknown) => listener(payload)
