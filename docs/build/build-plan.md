@@ -143,7 +143,11 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | Claude Code の確認設定 | `.claude/settings.json` の `permissions.ask` に、`src/shared/**`・`src/main/core/**`（テストも含む。確認の決まりから一部だけを外す書き方の動きがはっきりしないため）・`docs/design/api-contract/**`・`docs/design/components/domain-model.md`・`src/renderer/styles/tokens.css` への Edit を入れる（`Edit` の決まりは Write にも効く。パスは `/` から書き、リポジトリの直下からの位置にする）。AI が触ろうとすると、技術者に確認が出る。リポジトリの直下で立ち上げた Claude Code に効く | 入力制約 |
 | CI での文書との対応の検査 | PR で `src/shared/**` か `src/main/core/**`（`*.test.ts` と CLAUDE.md を除く）が変わっているのに、domain-model.md・`docs/design/api-contract/**`・`docs/build/change-requests/**` のどれも変わっていなければ CI を失敗させる。整理だけの変更は、PR のひな形の「契約・判定の変更ではない（整理だけ）」に印を付ければ通す（印は技術者が PR で見る。本文を直すと CI が動き直す）。`scripts/check-contract-docs.ts`、`ci.yml` | 機械的検証 |
 
-- 2つとも coding-standards.md 9. に足した（2026-11-26。凍結のとき）
+| Claude Code の確認設定（検査） | 同じ `permissions.ask` に、検査の設定・テスト（`eslint.config.mjs`・Prettier・`tsconfig*.json`・`vitest.config.mts`・`test/config/**`・`test/contract/**`・`scripts/check-*.ts`・`.github/**`・`.claude/settings.json`）への Edit を入れる。AI が CI を通すために決まりを緩めるのを止める | 入力制約 |
+| CI での決まり（検査）の変更の申告 | PR で上の検査のファイルか `package.json` の `scripts` が変わっていたら、PR の本文の「決まり（検査）を変えた」に印が要る。印が無ければ CI を失敗させる。Dependabot の PR（Action の版の上げ）は見ない。`scripts/check-guard-changes.ts`、`ci.yml` | 機械的検証 |
+
+- 上の2つは coding-standards.md 9. に足した（2026-11-26。凍結のとき）
+- 下の2つは、coding-standards.md の決まりを ESLint とテストに移したときに足した（2026-11-26。⑭ S1 の後）。決まりを機械に任せるほど、人が見るのは「決まりそのものの変更」と「例外の理由」になる。その変更を見落とさないため
 - Claude Code 以外のエージェントには、AGENTS.md 行動ルール 8 と CI の検査が効く
 
 ### 6.4 凍結の記録
@@ -187,12 +191,17 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | S1 `app/window.ts` | 配布物のメニューは、Mac はアプリ・編集・窓、Windows は出さない | 再読み込みと開発者ツールを外し、Mac のコピー・貼り付けは残すため |
 | S1 `index.ts` | 開発サーバーの URL は配布物では見ない | security-rules.md S-03 に書いた |
 | S1 `renderer` | 言語の仕組み（i18n）の土台を S1 で作った（計画では S6）。使い始めの案内は仮の画面。最初の値を取れなければ「開き直してください」と出す | 文言を部品に直接書かない決まり（coding-standards.md 4.）を S1 から守るため |
+| 検査 `eslint.config.mjs` | `notification` を単独で使わない決まりは、コードの識別子だけに当てる。引用符の要る名前（IPC のチャンネル名など契約の文字列）と、外の部品から import する名前（Electron の `Notification`）は外す | 凍結した契約のチャンネル名（`os:openNotificationSettings` など）は「OS の通知の設定」の意味で、変えるには変更要求が要る。設計書のファイル名 `github/notifications.ts` は GitHub の API の名前をなぞるもので、ファイル名の検査では見ない |
+| 検査 `test/config/coding-rules.test.ts` | CSS で書いてよい生の値は、罫線とフォーカスの輪の 1px・2px と、画面の大きさに対する値（`100vh` など）だけ。`@media` の行は見ない | design-system.md 5. の文章（2px の輪）どおり。トークンに罫線の太さは無く、`tokens.css` は凍結しているため。CSS の変数は `@media` に使えないため |
+| 検査 `test/config/lint-rules.test.ts` | ESLint の決まりが効いているかを、架空のコードで確かめるテストを置いた | 設定の書き間違いで、決まりが黙って効かなくなったり効きすぎたりするのを防ぐ（作るときに1度起きた: 除外の書き方の優先順位を取り違え、外したはずの契約の名前が引っかかった） |
+| 検査 `events.json` | GitHub の通知の問い合わせの記録の項目を `notifications` から `githubNotifications` に変えた | 決まり（coding-standards.md 3.）に合わせた。まだ配っていないので、前の形からの移し替えは要らない |
 
 ## 9. ⑮ への申し送り
 
 - 統合で必ず確かめる契約: IPC（`ipc-contract.ts` と preload・画面の使い方）、GitHub API（github-api.md に無い API・書き込み・`mutation` が無いこと。security-rules.md S-07）、デザイントークン（同じ意味のトークンが無いこと）
 - 通しで確かめる不変条件: domain-model.md 7. の I-1〜I-8 を、取り込み → 保存 → 画面の経路で確かめる。特に I-5（取り込みの記録と出来事を同じ書き込みで保存する）を、書き込みの途中で落としたときの結合のテストで
 - 実データで確かめるもの: R-04（参加中の取りこぼし）、R-09（GitHub の通知が作られるまでの遅れ）、R-10（PR の一覧の速さ）
+- 通しの振り返りに持ち込むもの: ⑪ で「機械では拾えない」として PR のレビュー（coding-standards.md 10.）に回した8項目のうち、4項目は ESLint とテストに移せ、2項目は一部を移せた（残りは S2・S7 で移す）。S1 では、人のレビュー（AI の自己確認と CI）をすり抜けた決まりの違反を2つ（`notification` を単独で使った名前、1ファイルに部品2つ）と、理由の書かれていない型の主張を8か所、検査が見つけた（2026-11-26）。フレームへの改善の提案の候補: ⑪ の規約の表に「確かめる手段」の欄を置き、人に残す項目には機械にできない理由を書く
 
 ---
 

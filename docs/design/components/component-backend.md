@@ -276,7 +276,7 @@ sequenceDiagram
 | --- | --- | --- |
 | `events.json` | `schemaVersion` | 1 |
 | | `events` | 出来事（domain-model.md 2. の `GitHubEvent`）。同じ id は1件で、先に受け取ったものを残す（I-1） |
-| | `notifications` | GitHub の通知の問い合わせの記録: `etag`（前回の応答の ETag。CR-003）・`lastSuccessAt`（前回の成功の時刻） |
+| | `githubNotifications` | GitHub の通知の問い合わせの記録: `etag`（前回の応答の ETag。CR-003）・`lastSuccessAt`（前回の成功の時刻） |
 | | `threads` | スレッドの id ごとの取り込みの記録: `reason`（最新の理由）・`updatedAt`（スレッドの更新時刻。30日動きが無いかの判定）・`expandedUntil`（分解した時刻）・`participating`（参加中。戻さない）・`consecutiveFailures`（続けて失敗した回数） |
 | `settings.json` | 設定（domain-model.md 2. の `Settings`） | 足りない項目は既定値で補う。知らない項目・範囲の外の値があれば壊れたものとして退避する。無いときは、変えるまでファイルを作らない |
 
