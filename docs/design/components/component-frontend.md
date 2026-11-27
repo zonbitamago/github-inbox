@@ -111,7 +111,7 @@
 src/renderer/
   main.tsx              入口
   App.tsx               1. の画面の切り替え
-  main-store/           メインから届く状態（main-store.ts。useSyncExternalStore で読む use-main-store.tsx）。最初の値を取れなければ loadFailed を持ち、「開き直してください」と出す（⑭ S1）
+  main-store/           メインから届く状態（main-store.ts。useSyncExternalStore で読む use-main-store.tsx）。最初の値を取れなければ loadFailed を持ち、「開き直してください」と出す（⑭ S1）。部品がメインに頼むときも、ここの `useInvoke` を通す（⑭ S2）
   pages/                keychain-notice/ onboarding/ main/ settings/
   features/             event-list/ pr-list/ status/ auth/ onboarding/ settings/
   ui/                   2.3 の部品

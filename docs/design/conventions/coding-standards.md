@@ -139,7 +139,7 @@
 | GitHub Actions の権限・Action の SHA 固定・秘密の値・`pull_request_target`（security-rules.md S-12） | テスト（`test/config/workflows.test.ts`） |
 | 上の ESLint の決まりが効いていること | テスト（`test/config/lint-rules.test.ts`。架空のコードで確かめる） |
 | 書式が Prettier のとおり（`docs/`・`*.md` は除く） | CI（`npm run format:check`。⑬ B0 から） |
-| GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い） | テスト（security-rules.md S-07。S2 から） |
+| GitHub に書き込む呼び出しが無い（REST は GET だけ、GraphQL に `mutation` が無い。`fetch` を呼ぶのは `github/client.ts` だけで、POST は GraphQL のために `client.ts` だけに許す） | テスト（`test/config/github-read-only.test.ts`。security-rules.md S-07。⑭ S2 から） |
 | 契約・判定（`src/shared/`・`src/main/core/`）を変えるときは、文書か変更要求を同じ PR で直す | CI（`scripts/check-contract-docs.ts`。build-plan.md 6.3。⑬ の凍結で足した） |
 | 決まり（検査の設定・テスト）を変えたら、PR の本文で申告する | CI（`scripts/check-guard-changes.ts`。build-plan.md 6.3） |
 | 凍結した契約・判定・トークン、検査の設定・テストを AI が書き換えるときは、技術者に確認が出る | Claude Code の `.claude/settings.json` の `permissions.ask`（build-plan.md 6.3） |

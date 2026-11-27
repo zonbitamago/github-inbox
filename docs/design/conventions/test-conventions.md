@@ -4,6 +4,7 @@
 - 入力: [test-strategy.md](../quality/test-strategy.md)、[domain-model.md](../components/domain-model.md)、[github-api.md](../api-contract/github-api.md)、[ipc-contract.md](../api-contract/ipc-contract.md)
 - 状態: 技術者が確認済み（2026-11-26）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-16・17）
+- 更新: 2026-11-27 ⑭ S2 で、MSW 3 の設定の名前と、画面のテストの後片付けを書いた
 
 何をどの層で確かめるかは test-strategy.md にある。ここでは、テストの書き方の決まりを書く。
 
@@ -80,7 +81,7 @@
 
 ### 4.2 メインの結合
 
-- GitHub への問い合わせは MSW で受ける。**登録していない問い合わせはエラーにする**（`onUnhandledRequest: 'error'`）。本物の GitHub にはつながない
+- GitHub への問い合わせは MSW で受ける。**登録していない問い合わせはエラーにする**（MSW 3 では `server.listen({ onUnhandledFrame: 'error' })`。2 までの `onUnhandledRequest` から名前が変わった。⑭ S2）。本物の GitHub にはつながない
 - 時計は偽の時計（Vitest のタイマー）。間隔・利用制限・失敗が続いたときの状態の変わり方（component-backend.md 6.）を、時刻を進めて確かめる
 - ファイルはテストごとの一時フォルダに書き、終わったら消す。壊れたファイル・書き込みの途中で落ちた状態（I-5）を作って確かめる
 - 問い合わせの回数を数える（Q-04）。立ち上げ時の取り戻しで回数が目安を超えないこと
@@ -88,6 +89,7 @@
 ### 4.3 画面の結合
 
 - `window.githubInbox` は、ipc-contract.md の型どおりの偽物を渡す。偽物は `test/` の1か所に置き、全部のテストで使い回す
+- 描いた画面はテストごとに片付ける（`afterEach(cleanup)`。Vitest の globals を使っていないため、Testing Library が自動では片付けない。⑭ S2）
 - 要素は役割（role）と見える文字で探す。CSS のクラス名や `data-testid` には頼らない（どうしても要るときだけ `data-testid`）
 - 文言は i18n のキーではなく、日本語の表示で確かめる（言語の切り替えのテストだけ英語も）
 - 画面全体のスナップショットのテストは書かない（見た目は人が判断する。Q-17）
