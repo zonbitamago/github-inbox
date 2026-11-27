@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, type Settings } from '../../shared/domain'
+import { DEFAULT_SETTINGS, type Appearance, type Settings } from '../../shared/domain'
 import { createSettingsUpdater } from './settings-change'
 
 function setup(initial: Settings = DEFAULT_SETTINGS) {
   let settings = structuredClone(initial)
   const published: Settings[] = []
   const eventDays: number[] = []
+  const appearances: Appearance[] = []
   let prPeriodChanged = 0
   const update = createSettingsUpdater({
     current: () => structuredClone(settings),
@@ -18,8 +19,15 @@ function setup(initial: Settings = DEFAULT_SETTINGS) {
     prPeriodChanged: () => {
       prPeriodChanged += 1
     },
+    appearanceChanged: (appearance) => appearances.push(appearance),
   })
-  return { update, published, eventDays, prPeriodChangedCount: () => prPeriodChanged }
+  return {
+    update,
+    published,
+    eventDays,
+    appearances,
+    prPeriodChangedCount: () => prPeriodChanged,
+  }
 }
 
 // ipc-contract.md 2. の settings:update、component-frontend.md 4.「設定の変更」
@@ -58,6 +66,22 @@ describe('設定を変える（settings:update）', () => {
 
     expect(eventDays).toEqual([])
     expect(prPeriodChangedCount()).toBe(0)
+  })
+
+  it('画面の配色を変えたら、メインの外観に入れる（F-35、AC-44。CR-012）', async () => {
+    const { update, appearances } = setup()
+    await update({ appearance: 'dark' })
+    await update({ appearance: 'dark' })
+    await update({ appearance: 'system' })
+
+    expect(appearances).toEqual(['dark', 'system'])
+  })
+
+  it('画面の配色を変えないときは、メインの外観に触れない', async () => {
+    const { update, appearances } = setup()
+    await update({ language: 'en' })
+
+    expect(appearances).toEqual([])
   })
 
   it('デスクトップ通知の設定は丸ごと置き換える（ipc-contract.md 2.）', async () => {

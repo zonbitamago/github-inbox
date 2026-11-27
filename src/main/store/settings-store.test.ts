@@ -58,10 +58,53 @@ describe('設定の保存（component-backend.md 7.）', () => {
     })
   })
 
+  it('画面の配色を持たない前の版のファイルは、OS に合わせる（CR-012）', async () => {
+    await writeFile(path, JSON.stringify({ ...DEFAULT_SETTINGS, appearance: undefined }))
+    const store = new SettingsStore(path, createMemoryLogger())
+    expect((await store.load(NOW)).appearance).toBe('system')
+  })
+
+  it('知らない項目は捨てて読み、ほかの設定と使い始めた記録は残す（新しい版で保存したファイル。CR-013）', async () => {
+    const completedAt = NOW.toISOString()
+    await writeFile(
+      path,
+      JSON.stringify({
+        ...DEFAULT_SETTINGS,
+        language: 'en',
+        futureSetting: 'x',
+        desktopNotification: {
+          ...DEFAULT_SETTINGS.desktopNotification,
+          byType: { ...DEFAULT_SETTINGS.desktopNotification.byType, future_type: false },
+          futureOption: true,
+        },
+        onboarding: { completedAt, futureStep: 1 },
+      }),
+    )
+    const logger = createMemoryLogger()
+    const store = new SettingsStore(path, logger)
+
+    expect(await store.load(NOW)).toEqual({
+      ...DEFAULT_SETTINGS,
+      language: 'en',
+      onboarding: { completedAt },
+    })
+    expect(await readdir(dir)).toEqual(['settings.json'])
+    expect(logger.entries).toEqual([
+      {
+        level: 'warn',
+        kind: 'store.unknown_keys_dropped',
+        fields: { file: 'settings.json', count: 4 },
+      },
+    ])
+  })
+
   it.each([
     ['JSON として読めない', '{ broken'],
     ['日数が範囲の外', JSON.stringify({ schemaVersion: 1, prPeriodDays: 99 })],
-    ['知らない項目がある', JSON.stringify({ schemaVersion: 1, unknown: true })],
+    [
+      '知らない区分値（新しい版で増えた画面の配色など）',
+      JSON.stringify({ schemaVersion: 1, appearance: 'high_contrast' }),
+    ],
     ['版が違う', JSON.stringify({ schemaVersion: 2 })],
     ['オブジェクトでない', JSON.stringify([1, 2])],
   ])('%s → 退避して既定値（Q-09）', async (_name, text) => {

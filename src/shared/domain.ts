@@ -73,6 +73,11 @@ export const LANGUAGES = ['ja', 'en'] as const
 export const LanguageSchema = z.enum(LANGUAGES)
 export type Language = z.infer<typeof LanguageSchema>
 
+/** 画面の配色（F-35。CR-012）。system は OS の外観に従う */
+export const APPEARANCES = ['system', 'light', 'dark'] as const
+export const AppearanceSchema = z.enum(APPEARANCES)
+export type Appearance = z.infer<typeof AppearanceSchema>
+
 export const AUTH_METHODS = ['pat'] as const
 export const AuthMethodSchema = z.enum(AUTH_METHODS)
 export type AuthMethod = z.infer<typeof AuthMethodSchema>
@@ -185,6 +190,7 @@ export const SettingsSchema = z.strictObject({
   eventDays: DaysSchema,
   layout: LayoutSchema,
   language: LanguageSchema,
+  appearance: AppearanceSchema,
   onboarding: z.strictObject({ completedAt: IsoDateTimeSchema.optional() }),
   /** F-36 (5) の判定に使う */
   lastLaunchedVersion: z.string().min(1).optional(),
@@ -213,5 +219,6 @@ export const DEFAULT_SETTINGS: Settings = {
   eventDays: 7, // F-32
   layout: 'tabs', // AI案（domain-model.md 2.）
   language: 'ja',
+  appearance: 'system', // F-35。OS の外観に従う（CR-012）
   onboarding: {},
 }

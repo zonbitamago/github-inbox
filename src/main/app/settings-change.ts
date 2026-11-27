@@ -2,8 +2,9 @@
 // 保存して画面に知らせ、変わった値に応じて一覧を合わせる。
 // 出来事の一覧の日数（F-32）が変わったら、保存してある出来事から一覧を入れ替える（取り直さない。domain-model.md 5.）。
 // PR の一覧の期間（F-16）が変わったら、取得中でも取り直す。
+// 画面の配色（F-35）が変わったら、メインの外観に入れ直す（CR-012。画面の prefers-color-scheme がそれに従う）。
 // デスクトップ通知・言語は、使う側が毎回 current を読むので、ここでは何もしない。並べ方は画面だけで使う。
-import type { Settings } from '../../shared/domain'
+import type { Appearance, Settings } from '../../shared/domain'
 import type { Result, SettingsPatch } from '../../shared/ipc-contract'
 
 export interface SettingsChangeDeps {
@@ -15,6 +16,8 @@ export interface SettingsChangeDeps {
   eventDaysChanged: (eventDays: number) => void
   /** PR の一覧を、新しい期間で取り直す */
   prPeriodChanged: () => void
+  /** 画面の配色を、メインの外観（nativeTheme.themeSource）に入れる */
+  appearanceChanged: (appearance: Appearance) => void
 }
 
 export function createSettingsUpdater(
@@ -26,6 +29,7 @@ export function createSettingsUpdater(
     deps.publish(saved)
     if (saved.eventDays !== before.eventDays) deps.eventDaysChanged(saved.eventDays)
     if (saved.prPeriodDays !== before.prPeriodDays) deps.prPeriodChanged()
+    if (saved.appearance !== before.appearance) deps.appearanceChanged(saved.appearance)
     return { ok: true, value: saved }
   }
 }

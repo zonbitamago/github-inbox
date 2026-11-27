@@ -3,6 +3,7 @@
 // トークンを運ぶのは auth:submitPat の引数だけ（I-7）。
 import { z } from 'zod'
 import {
+  AppearanceSchema,
   AuthMethodSchema,
   AuthStatusSchema,
   DaysSchema,
@@ -104,6 +105,8 @@ export const SettingsPatchSchema = z.strictObject({
   eventDays: DaysSchema.optional(),
   layout: LayoutSchema.optional(),
   language: LanguageSchema.optional(),
+  /** 画面の配色（F-35。CR-012） */
+  appearance: AppearanceSchema.optional(),
 })
 export type SettingsPatch = z.infer<typeof SettingsPatchSchema>
 

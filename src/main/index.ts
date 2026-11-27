@@ -3,7 +3,7 @@
 // S6b はアプリケーションフォルダへの移動・試しのデスクトップ通知・新しい版の確認。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
+import { app, ipcMain, nativeTheme, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
 import { createApplicationsFolderMover } from './app/applications-folder'
 import { AppStateHolder } from './app/app-state'
@@ -61,6 +61,8 @@ async function start(): Promise<void> {
   // 設定を読む（無い・壊れていれば既定値）
   const settingsStore = new SettingsStore(join(userData, 'settings.json'), logger)
   const settings = await settingsStore.load(now())
+  // 画面の配色（F-35。CR-012）。窓を開く前に入れ、開いた直後に配色が入れ替わらないようにする
+  nativeTheme.themeSource = settings.appearance
 
   // 保存済みの出来事を読む。窓を開くのと並べて行い、ネットワークを待たない（Q-03、DR-05）
   const eventsStore = new EventsStore(join(userData, 'events.json'), logger)
@@ -230,6 +232,9 @@ async function start(): Promise<void> {
       prList
         .refresh()
         .catch((error: unknown) => logger.error('pr_list.unexpected', { error: errorName(error) }))
+    },
+    appearanceChanged: (appearance) => {
+      nativeTheme.themeSource = appearance
     },
   })
   // 自動起動（F-25）

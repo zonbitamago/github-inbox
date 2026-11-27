@@ -6,6 +6,7 @@ import type { SettingsPatch } from '../../../shared/ipc-contract'
 import { useT } from '../../i18n'
 import { useInvoke, useMainSnapshot } from '../../main-store/use-main-store'
 import { AccountSection } from './AccountSection'
+import { AppearanceSection } from './AppearanceSection'
 import { DesktopNotificationSection } from './DesktopNotificationSection'
 import { LanguageSection } from './LanguageSection'
 import { ListsSection } from './ListsSection'
@@ -55,6 +56,10 @@ export function SettingsForm({
         {desktopNotificationHelp}
       </SettingsSection>
       <ListsSection settings={settings} onChange={(patch) => void save(patch)} />
+      <AppearanceSection
+        value={settings.appearance}
+        onChange={(appearance) => void save({ appearance })}
+      />
       <LanguageSection value={settings.language} onChange={(language) => void save({ language })} />
       <LoginItemSection enabled={appState.loginItem.enabled} />
       <OnboardingAgainSection onRestart={onRestartOnboarding} />

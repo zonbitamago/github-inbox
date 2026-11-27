@@ -23,7 +23,7 @@ v0（仮）
 
 ## 2. カラートークン
 
-CSS の変数として `src/renderer/styles/tokens.css` に置く。ライトとダークは `prefers-color-scheme` で切り替える（F-35）。
+CSS の変数として `src/renderer/styles/tokens.css` に置く。ライトとダークは `prefers-color-scheme` で切り替える（F-35）。設定の画面の配色で「ライト」「ダーク」を選んだときは、メインが Electron の `nativeTheme.themeSource` で OS の外観を上書きし、`prefers-color-scheme` もそれに従う。このため、選べるようにしてもトークンと CSS は変えない（CR-012）。
 
 ### 2.1 基本
 
@@ -133,3 +133,4 @@ CSS の変数として `src/renderer/styles/tokens.css` に置く。ライトと
 | 2026-11-26 | v0（仮）を起票 | ⑪ 規約設計 | 全画面 |
 | 2026-11-26 | 帯の色を状態ごとに1つに決め、アイコンを使わないことにした | ⑫ 設計レビュー DR-18 | 帯・ボタン |
 | 2026-11-26 | ラベル（2.2）と影（4.）の値（仮）を置き、`src/renderer/styles/tokens.css` を作った。書体のトークンは `font` の一括指定（太さ 大きさ/行間 書体）の形にした | ⑬ B4 | 全画面 |
+| 2026-11-27 | 2. に、設定で選んだ画面の配色が `prefers-color-scheme` に効く仕組みを書いた。トークンの名前と値は変えていない | CR-012・D-034 | 全画面 |

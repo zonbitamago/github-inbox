@@ -142,6 +142,27 @@ describe('一覧（F-16・F-32・F-33）', () => {
   })
 })
 
+// F-35、AC-44。CR-012
+describe('画面の配色（F-35）', () => {
+  it('既定は「OS に合わせる」。ダークを選ぶと送る', async () => {
+    const api = await renderPage()
+    const select = screen.getByRole('combobox', { name: '画面の配色' })
+    expect(select).toHaveProperty('value', 'system')
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['OS に合わせる', 'ライト', 'ダーク'])
+    await userEvent.selectOptions(select, 'ダーク')
+    expect(api.invocations).toEqual([{ channel: 'settings:update', args: { appearance: 'dark' } }])
+  })
+
+  it('保存してある配色を選んだ状態で出す', async () => {
+    await renderPage(appState({}, { appearance: 'light' }))
+    expect(screen.getByRole('combobox', { name: '画面の配色' })).toHaveProperty('value', 'light')
+  })
+})
+
 // F-26、AC-28
 describe('言語（F-26）', () => {
   it('英語を選ぶと送る。言語の名前はその言語で出す', async () => {

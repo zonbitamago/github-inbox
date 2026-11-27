@@ -4,6 +4,7 @@
 - 入力: [requirements.md](../../requirements/requirements.md)、[acceptance.md](../../requirements/acceptance.md)、`docs/design/` の全成果物
 - 状態: AI が下書きし、技術者が確認済み（2026-11-26）。設計レビューの対応（DR-01）を反映した
 - 更新: 2026-11-27 N-09 を △ にした（D-033。CR-011）
+- 更新: 2026-11-27 F-35 に AC-44（設定で画面の配色を選ぶ）を足した（D-034。CR-012）
 
 要件（F・N・C）ごとに、設計のどこに反映したか、どの受け入れ条件（AC・NF）とテストの層で確かめるかを並べる。漏れ（設計やテストが無い）と過剰（要件に根拠が無い設計）を見つけるための表。
 
@@ -49,7 +50,7 @@
 | F-32 | S | domain-model 2.（`eventDays`）・5.、ipc-contract 3.（`events:reset`） | AC-34 | 結合M・結合R | ○ |
 | F-33 | S | component-frontend 2.1・5.（`layout`） | AC-35 | 結合R | ○ |
 | F-34 | M | ipc-contract 2.（`clipboard:copyLinks`）、component-frontend 5. | AC-36 | 結合R・E2E | ○ |
-| F-35 | S | design-system 2.（ライト・ダーク） | AC-39 | 手動 | ○ |
+| F-35 | S | design-system 2.（ライト・ダーク）、domain-model 2. の `appearance`（CR-012） | AC-39・AC-44 | 手動、画面の結合（設定で選ぶ） | ○ |
 | F-36 | M | component-frontend 3.、auth-flow 4.、component-backend 8. | AC-29・41・42 | 結合R・E2E・手動 | △ アプリケーションフォルダへの移動（R-07）、キーチェーンの確認が出る時点（R-06） |
 | F-37 | S | build-and-release 5.（作るなら Release か README） | — | — | ○（受け入れ条件は無い。S） |
 
