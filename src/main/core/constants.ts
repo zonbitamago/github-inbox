@@ -23,3 +23,12 @@ export const LOG_RETENTION_DAYS = 7
 export const CORRUPT_FILE_RETENTION_DAYS = 7
 
 export const DAY_MS = 24 * 60 * 60 * 1000
+
+/** GitHub への問い合わせの時間切れ（github-api.md 1.）。過ぎたら「つながらない」とする（component-backend.md 6.3） */
+export const GITHUB_REQUEST_TIMEOUT_MS = 30 * 1000
+
+/** GitHub に同時に投げる問い合わせの数。REST と GraphQL を合わせて（component-backend.md 6.2、Q-04） */
+export const MAX_CONCURRENT_GITHUB_REQUESTS = 4
+
+/** 平常の問い合わせの間隔。立ち上げ時の GET /user がつながらなかったときも、この間隔でやり直す（component-backend.md 5.1・6.1、N-01） */
+export const POLL_INTERVAL_MS = 60 * 1000
