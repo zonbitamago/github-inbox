@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -81,10 +81,12 @@ describe('画面の殻', () => {
   it('保存済みの出来事を、種類・対象・リポジトリ・誰がとともに一覧に出す', async () => {
     await renderApp(appState())
     expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
-    expect(screen.getByText('ログイン画面の文言を直す')).toBeTruthy()
-    expect(screen.getByText('コメント')).toBeTruthy()
-    expect(screen.getByText('example-org/app #101')).toBeTruthy()
-    expect(screen.getByText('bob')).toBeTruthy()
+    // 絞り込みの選択肢にも種類の名前があるので、一覧の中で探す
+    const list = within(screen.getByRole('list'))
+    expect(list.getByText('ログイン画面の文言を直す')).toBeTruthy()
+    expect(list.getByText('コメント')).toBeTruthy()
+    expect(list.getByText('example-org/app #101')).toBeTruthy()
+    expect(list.getByText('bob')).toBeTruthy()
   })
 
   it('bot の発言には印を付ける', async () => {
@@ -136,7 +138,7 @@ describe('画面の殻', () => {
   it('言語が英語なら英語で出す（F-26）', async () => {
     await renderApp(appState({}, { language: 'en' }))
     expect(screen.getByRole('heading', { name: 'Events' })).toBeTruthy()
-    expect(screen.getByText('Comment')).toBeTruthy()
+    expect(within(screen.getByRole('list')).getByText('Comment')).toBeTruthy()
   })
 })
 

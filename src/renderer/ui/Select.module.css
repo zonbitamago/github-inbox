@@ -1,0 +1,20 @@
+/* 選択欄（design-system.md 2.1・4.・6.） */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font: var(--font-caption);
+  color: var(--color-text-mute);
+}
+
+.select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: var(--font-body);
+}

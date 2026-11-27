@@ -13,7 +13,14 @@ import styles from './PatPanel.module.css'
 /** auth:submitPat の引数の長さの上限（ipc-contract.md 2.） */
 const TOKEN_MAX_LENGTH = 255
 
-export function PatPanel({ title }: { title: MessageKey }) {
+export function PatPanel({
+  title,
+  onSignedIn,
+}: {
+  title: MessageKey
+  /** サインインできたとき（メインの画面の「サインインし直す」で、一覧に戻るため。CR-008） */
+  onSignedIn?: () => void
+}) {
   const t = useT()
   const invoke = useInvoke()
   const [token, setToken] = useState('')
@@ -36,8 +43,10 @@ export function PatPanel({ title }: { title: MessageKey }) {
     setError(null)
     try {
       const result = await invoke('auth:submitPat', { token })
-      if (result.ok) setToken('')
-      else setError(patErrorMessage(result.error.code))
+      if (result.ok) {
+        setToken('')
+        onSignedIn?.()
+      } else setError(patErrorMessage(result.error.code))
     } catch {
       setError('auth.pat.error.other')
     } finally {

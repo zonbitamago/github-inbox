@@ -1,0 +1,6 @@
+.time {
+  display: inline-flex;
+  gap: var(--space-1);
+  color: var(--color-text-mute);
+  font: var(--font-caption);
+}

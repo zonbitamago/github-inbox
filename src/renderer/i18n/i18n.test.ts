@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EVENT_TYPES } from '../../shared/domain'
+import { EVENT_TYPES, REVIEW_RESULTS } from '../../shared/domain'
 import { en } from './en'
 import { ja } from './ja'
 import { translate } from './index'
@@ -17,6 +17,14 @@ describe('文言', () => {
     for (const type of EVENT_TYPES) {
       expect(translate('ja', `eventType.${type}`)).not.toBe(`eventType.${type}`)
     }
+  })
+
+  it('レビューの結果の表示名が全部ある（business-data.md 2.2）', () => {
+    expect(REVIEW_RESULTS.map((result) => translate('ja', `reviewResult.${result}`))).toEqual([
+      '承認',
+      '修正依頼',
+      'コメントのみ',
+    ])
   })
 
   it.each([
