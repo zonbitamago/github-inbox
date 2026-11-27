@@ -5,6 +5,7 @@
 - 状態: 技術者が確認済み（2026-11-26）。REST と GraphQL を併用することは技術者が決めた（ADR-010）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-09・16・17）
 - 更新: 2026-11-27 デバイスフローをやめ、つなぎ先を `api.github.com` だけにした（CR-007）。`/user/teams` が `repo` スコープで読めることを書いた（0-5）
+- 更新: 2026-11-27 まとめた分解の `$since` を、一番古いスレッドのものにした（CR-009。⑭ S3）
 
 メインプロセスの `github/` だけが GitHub につなぐ（component-backend.md）。ここに書いていない API は使わない。足すときはこの文書を先に直す。
 
@@ -105,7 +106,7 @@ fragment IssueExpand on Issue {
 
 - **レビューのスレッドへの返信は timelineItems に出てこない**（⑬ で依頼者のデータで確かめた。返信だけのレビュー285件のうち、timelineItems に出たのは0件）。そのためレビューは `reviews(last: 50)` で取り、提出した時刻（`submittedAt`）が「分解した時刻 − 5分」以降のものだけを使う。`submittedAt` が無いもの（下書き中）は使わない。一番古いものがまだ範囲内で `hasPreviousPage` が真なら、そのスレッドだけ `before` で前へたどる（CR-002）
 - `reviews` の行へのコメントの `replyTo` は、REST の `in_reply_to_id` と一致する（⑬ で確かめた）。返信だけのレビューの見分け（domain-model.md 4.1 M-4）に使う
-- `$since` はスレッドの取り込みの記録の「分解した時刻 − 5分」（domain-model.md 5.）。スレッドごとに違う場合は、変数をスレッドごとに分ける。`timelineItems` の `since` は、コメント・レビュー依頼・アサインの作られた時刻で絞る
+- `$since` は、まとめたスレッドのうち一番古い「分解した時刻 − 5分」（スレッドの取り込みの記録。domain-model.md 5.）。`$since` は断片の中にあるため、1つの問い合わせの中でスレッドごとに分けられない。そこでスレッドを since の順に並べ、近いものから20件ずつまとめる。スレッドごとの since での絞り込みは `core/expand-thread` が行う（CR-009）。`timelineItems` の `since` は、コメント・レビュー依頼・アサインの作られた時刻で絞る
 - 1つのスレッドで timelineItems の `hasNextPage` が真なら、そのスレッドだけ `after` で続きを取る
 - チーム（`Team`）の名前などの項目は読まない。`read:org` スコープが無いと読めないため（domain-model.md 10. 要確認 1）
 - 一部の別名だけが失敗した（`errors` に入った）ときは、そのスレッドだけを失敗として扱う（component-backend.md 5.2）
