@@ -29,8 +29,6 @@ export const IPC_ERROR_CODES = [
   'url_not_allowed',
   'pat_invalid',
   'pat_missing_scope',
-  'device_flow_expired',
-  'device_flow_denied',
   'encryption_unavailable',
   'not_supported',
   'internal',
@@ -62,8 +60,6 @@ export const PrListSnapshotSchema = z.strictObject({
 })
 export type PrListSnapshot = z.infer<typeof PrListSnapshotSchema>
 
-export const DEVICE_FLOW_STATUSES = ['waiting', 'expired', 'denied'] as const
-
 export const AppStateSchema = z.strictObject({
   appInfo: z.strictObject({
     version: z.string().min(1),
@@ -76,14 +72,6 @@ export const AppStateSchema = z.strictObject({
     /** GitHub のユーザー名（トークンではない） */
     login: z.string().min(1).optional(),
     method: AuthMethodSchema.optional(),
-    deviceFlow: z
-      .strictObject({
-        userCode: z.string().min(1),
-        verificationUri: z.string().min(1),
-        expiresAt: IsoDateTimeSchema,
-        status: z.enum(DEVICE_FLOW_STATUSES),
-      })
-      .optional(),
   }),
   ingest: z.strictObject({
     state: IngestStateSchema,
@@ -137,17 +125,6 @@ export const invokeContract = {
     args: z.strictObject({ enabled: z.boolean() }),
     result: resultSchema(z.strictObject({ enabled: z.boolean() })),
   },
-  'auth:startDeviceFlow': {
-    args: NoArgsSchema,
-    result: resultSchema(
-      z.strictObject({
-        userCode: z.string().min(1),
-        verificationUri: z.string().min(1),
-        expiresAt: IsoDateTimeSchema,
-      }),
-    ),
-  },
-  'auth:cancelDeviceFlow': { args: NoArgsSchema, result: resultSchema(VoidValueSchema) },
   /** PAT を画面からメインへ一度だけ送る（I-7） */
   'auth:submitPat': {
     args: z.strictObject({ token: z.string().min(1).max(255) }),

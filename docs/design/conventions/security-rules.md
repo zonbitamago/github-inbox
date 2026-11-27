@@ -4,6 +4,7 @@
 - 入力: ADR-002・004・005・007、[non-functional.md](../quality/non-functional.md) Q-09〜Q-12・Q-15、[domain-model.md](../components/domain-model.md) 7.、[auth-flow.md](../api-contract/auth-flow.md)、[container-overview.md](../architecture/container-overview.md) 5.
 - 状態: 技術者が確認済み（2026-11-26）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-02・12・14）
+- 更新: 2026-11-27 OAuth App を使わなくなったことを S-16 に書いた（CR-007）
 
 トークンは `repo` スコープ（読み書きを含む）を持ち、会社のプライベートリポジトリの内容を扱う。リポジトリは公開する（ADR-005）。この2つを前提に、守ることを番号で決める。
 
@@ -28,7 +29,7 @@
 | S-13 | **リポジトリ**: secret scanning と push protection を有効にする。`main` を保護し、PR と CI の成功を必須にする（DR-14）。コミットの作成者のメールアドレスを GitHub の noreply のものにする（公開リポジトリでは誰でも見えるため）。`.gitignore` に、ビルドの出力・`.env`・トークンを入れたファイル・禁止語リストを入れる | S-14 の検査 |
 | S-14 | **公開前の見直し**（2.） | 2. のチェックリスト |
 | S-15 | **保存したデータ**: 置き場所はユーザーフォルダ（`userData`）。暗号化しない（N-10、D-023）。30日を過ぎた出来事は消す。サインアウトで出来事も消す（auth-flow.md 6.） | 結合（AC-40） |
-| S-16 | **OAuth App**: コードに入れるのは client ID だけ。client secret はどこにも置かない（ADR-004） | テスト（`test/config/coding-rules.test.ts`。coding-standards.md 9.） |
+| S-16 | **OAuth App**: client secret はどこにも置かない（ADR-004）。OAuth App は CR-007 で使わなくなったが、決まりと検査は残す | テスト（`test/config/coding-rules.test.ts`。coding-standards.md 9.） |
 | S-17 | **更新**: 自動更新はしない（W-07）。新しい版の確認は版の番号を比べるだけで、ダウンロードは利用者がブラウザで行う | コードレビュー |
 | S-18 | **Mac の配布物は Hardened Runtime を入れる**。外から本アプリに部品を差し込まれ、キーチェーンの鍵からトークンを読まれるのを防ぐ。許可（entitlements）は electron-builder の既定のものだけにし、`allow-dyld-environment-variables` は足さない（build-and-release.md 2.） | 設定のコードレビュー、⑭ の手動（配布物の起動） |
 

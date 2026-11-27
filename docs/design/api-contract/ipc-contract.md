@@ -3,6 +3,7 @@
 - 作成: 2026-11-26（⑩.3 インターフェース設計）
 - 入力: [container-overview.md](../architecture/container-overview.md) 3.、[domain-model.md](../components/domain-model.md)、[component-backend.md](../components/component-backend.md)、ADR-007
 - 状態: 技術者が確認済み（2026-11-26）。⑬ B1 で、`invoke` の形と `SettingsPatch` の送り方を明確にした（技術者の確認待ち）
+- 更新: 2026-11-27 デバイスフローをやめ、`auth:startDeviceFlow`・`auth:cancelDeviceFlow`・`AppState.auth.deviceFlow`・`device_flow_expired`・`device_flow_denied` を外した（CR-007）
 
 本アプリには自前のサーバーが無いため、OpenAPI の仕様は作らない（ADR-001）。画面とメインプロセスの間の IPC が、この案件の「API の契約」に当たる。実装では `src/shared/ipc-contract.ts` に zod のスキーマとして置き、**これを唯一の正**とする（型はスキーマから作る）。
 
@@ -29,9 +30,7 @@
 | `prs:reload` | なし | `Result<PrListSnapshot>`。取得中なら、その取得の結果を返す | F-20 |
 | `settings:update` | `SettingsPatch`（設定の一部） | `Result<Settings>` | F-09・F-16・F-26・F-32・F-33 |
 | `loginItem:set` | `{ enabled: boolean }` | `Result<{ enabled: boolean }>` | F-25 |
-| `auth:startDeviceFlow` | なし | `Result<{ userCode: string; verificationUri: string; expiresAt: string }>` | F-27・F-36 (2) |
-| `auth:cancelDeviceFlow` | なし | `Result<void>` | F-27 |
-| `auth:submitPat` | `{ token: string }`（1〜255文字） | `Result<{ login: string }>` | F-27 |
+| `auth:submitPat` | `{ token: string }`（1〜255文字） | `Result<{ login: string }>` | F-27・F-36 (2) |
 | `auth:continueAfterKeychainNotice` | なし | `Result<void>` | F-36 (5) |
 | `auth:signOut` | なし | `Result<void>` | F-28 |
 | `shell:openGitHub` | `{ url: string }` | `Result<void>`。`https://github.com/` で始まらなければ `url_not_allowed` | F-12・F-17・F-36 (3)・F-31 |
@@ -69,8 +68,6 @@ interface AppState {
     status: AuthStatus;                    // domain-model.md 6.
     login?: string;                        // GitHub のユーザー名（トークンではない）
     method?: AuthMethod;
-    deviceFlow?: { userCode: string; verificationUri: string; expiresAt: string;
-                   status: 'waiting' | 'expired' | 'denied' };
   };
   ingest: { state: IngestState; lastSuccessAt?: string; retryAt?: string };
   desktopNotification: { failure?: DesktopNotificationFailure; failedAt?: string };
@@ -109,8 +106,6 @@ type Result<T> = { ok: true; value: T } | { ok: false; error: { code: IpcErrorCo
 | `url_not_allowed` | 開く・コピーする URL が `https://github.com/` で始まらない |
 | `pat_invalid` | 貼られた PAT で GitHub に入れない |
 | `pat_missing_scope` | 貼られたトークンに `repo` スコープが無い（fine-grained PAT もここ） |
-| `device_flow_expired` | デバイスフローのコードの期限が切れた |
-| `device_flow_denied` | 利用者が GitHub の画面で断った |
 | `encryption_unavailable` | OS の安全な保管場所が使えず、トークンを保存できない（平文では置かない。N-05） |
 | `not_supported` | その OS ではできない（Windows でのアプリケーションフォルダへの移動など） |
 | `internal` | 上のどれでもない。ログを見る |

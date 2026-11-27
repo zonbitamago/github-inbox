@@ -4,6 +4,7 @@
 - 入力: [requirements.md](../../requirements/requirements.md)、[acceptance.md](../../requirements/acceptance.md)、[ipc-contract.md](../api-contract/ipc-contract.md)、[domain-model.md](domain-model.md)、[non-functional.md](../quality/non-functional.md) Q-11・Q-17、ADR-007・012
 - 状態: 技術者が確認済み（2026-11-26）。状態の持ち方（React 標準の仕組みだけ）は技術者が決めた（ADR-012）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-03・06・18）
+- 更新: 2026-11-27 使い始めの案内の手順2を、デバイスフローから classic PAT の貼り付けに変えた（CR-007）
 
 見た目（色・書体・余白・角丸、ライトとダーク）は ⑪ の design-system.md に従う。ここでは部品の分け方と、状態の持ち主だけを決める。`docs/requirements/mockup/` は見た目の土台にしない（AGENTS.md）。
 
@@ -41,7 +42,7 @@
 | `event-list` | `EventListPanel`、`EventFilterBar`（文字・種類・リポジトリ）、`EventRow`（種類・レビューの結果か CI の結果・対象・リポジトリ・誰が（bot の印）・いつ・抜粋）、絞り込みの関数 `filterEvents` | F-11・F-12・F-13・F-32、AC-15・16・34 |
 | `pr-list` | `PrListPanel`、`PrFilterBar`（文字・状態・リポジトリ・自分待ちの理由。理由には「自分待ちの理由あり（どれか1つ）」も入れる）、`PrRow`（タイトル・リポジトリと番号・状態・作成者・更新・理由のラベル）、`ReloadButton`、`CopyAllLinksButton`、絞り込みの関数 `filterPrs` | F-14〜F-18・F-20・F-34、AC-17〜22・36 |
 | `status` | `IngestStatusBanner`（受け取れていない理由と、できること: サインインし直す・待つ）、`DesktopNotificationBanner`（失敗の理由と直し方: OS の設定を開く・アプリケーションフォルダへ移す）、`UpdateBanner`（新しい版と Releases を開く） | N-08・N-09・F-31、AC-14・31・38 |
-| `auth` | `DeviceFlowPanel`（コード・コピー・GitHub を開く・`repo` スコープの説明・待っている表示）、`PatPanel`（作成ページへのリンク・貼り付け欄） | F-27・F-36 (2) |
+| `auth` | `PatPanel`（作り方の手順・`repo` スコープの説明・作成ページへのリンク・貼り付け欄）。デバイスフローの `DeviceFlowPanel` は CR-007 でやめた | F-27・F-36 (2) |
 | `onboarding` | 3. の各手順の部品 | F-36 |
 | `settings` | `SettingsForm` | 2.1 の `SettingsPage` |
 
@@ -56,7 +57,7 @@
 | # | 手順 | 出す条件 | 中身 |
 | --- | --- | --- | --- |
 | 1 | アプリケーションフォルダへ移す | Mac で `inApplicationsFolder = false` | 移さないとデスクトップ通知が出ないことを説明し、「移して開き直す」。「あとで」も選べるが、選んだら N-09 の知らせが残る（AC-41） |
-| 2 | GitHub でサインイン | 常に | デバイスフロー（既定）と PAT を切り替えられる。`repo` スコープが「プライベートリポジトリの完全な制御」と出るが、アプリは読み取りだけを行うことを説明する |
+| 2 | GitHub でサインイン | 常に | classic PAT を作って貼る（CR-007）。作成ページで `repo` スコープが「プライベートリポジトリの完全な制御」と出るが、アプリは読み取りだけを行うことを、作る前に説明する |
 | 3 | GitHub の通知設定を確かめる | 常に | 確かめる項目（参加・メンションと Actions を「on GitHub」に、Actions の「失敗したものだけ」をオフに）と、設定ページ（`https://github.com/settings/notifications`）を開くボタン。⑬ で確かめた: Actions がメールだけ（「on GitHub」が無い）だと、成功・失敗を問わず CI の結果はアプリに届かない。「失敗したものだけ」が入っていると、成功した CI は届かない |
 | 4 | 試しのデスクトップ通知 | 常に | 1件出し、結果が `failed` なら直し方と OS の設定を開くボタン。`unknown` なら「表示された／表示されなかった」を利用者に聞く |
 | 5 | 終わり | 常に | 自動起動のオン／オフ（F-25）を選べる。「使い始める」で `onboarding:complete` |

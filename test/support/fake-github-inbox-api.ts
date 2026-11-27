@@ -14,7 +14,7 @@ export function appState(
 ): AppState {
   return {
     appInfo: { version: '0.1.0', platform: 'darwin', inApplicationsFolder: true },
-    auth: { status: 'signed_in', login: 'alice', method: 'device_flow' },
+    auth: { status: 'signed_in', login: 'alice', method: 'pat' },
     ingest: { state: 'ok' },
     desktopNotification: {},
     settings: {
