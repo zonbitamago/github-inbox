@@ -4,6 +4,12 @@
 import type { GitHubEvent } from '../../shared/domain'
 import type { AppState, GithubInboxApi, PrListSnapshot } from '../../shared/ipc-contract'
 
+/** デスクトップ通知のクリックで、出来事を強調する頼み（ui:focusEvent。F-08）。seq は届くたびに変わる */
+export interface FocusRequest {
+  eventId: string
+  seq: number
+}
+
 export interface MainSnapshot {
   /** 最初の値を取り終えた */
   loaded: boolean
@@ -13,6 +19,8 @@ export interface MainSnapshot {
   /** 発生の新しい順 */
   events: GitHubEvent[]
   prList: PrListSnapshot | null
+  /** 最後に届いた強調の頼み */
+  focusRequest: FocusRequest | null
 }
 
 /** useSyncExternalStore にそのまま渡せるよう、this を使わない関数の項目にする */
@@ -44,6 +52,7 @@ export function createMainStore(api: GithubInboxApi): MainStore {
     appState: null,
     events: [],
     prList: null,
+    focusRequest: null,
   }
   const listeners = new Set<() => void>()
   const unsubscribes: (() => void)[] = []
@@ -80,6 +89,9 @@ export function createMainStore(api: GithubInboxApi): MainStore {
           prListPushed = true
           set({ prList })
         }),
+        api.on('ui:focusEvent', ({ eventId }) =>
+          set({ focusRequest: { eventId, seq: (snapshot.focusRequest?.seq ?? 0) + 1 } }),
+        ),
       )
       try {
         const [state, events, prList] = await Promise.all([

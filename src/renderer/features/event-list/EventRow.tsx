@@ -2,6 +2,7 @@
 // 種類・レビューの結果か CI の結果・対象・リポジトリ・誰が（bot の印）・いつ・抜粋。押すと GitHub の該当ページを開く（F-12）。
 // GitHub から取った文字は文字としてだけ出す（S-05）。CI の結果は訳さず GitHub の値のまま（business-data.md 2.3）。
 // 文字で探した語は、探す対象の文字（タイトル・リポジトリと番号・誰が・抜粋・CI の結果）の中で強調する（D-032）。
+// デスクトップ通知から開いた出来事は、行ごと強調する（color-surface-selected。design-system.md 2.1。F-08）。
 import type { GitHubEvent } from '../../../shared/domain'
 import { formatDateTime, formatRelativeTime } from '../../i18n/format'
 import { useLanguage, useT } from '../../i18n'
@@ -15,19 +16,28 @@ export function EventRow({
   event,
   words,
   now,
+  emphasized = false,
   onOpen,
 }: {
   event: GitHubEvent
   /** 文字で探した語（強調する） */
   words: readonly string[]
   now: Date
+  /** デスクトップ通知から開いた出来事 */
+  emphasized?: boolean
   onOpen: (event: GitHubEvent) => void
 }) {
   const t = useT()
   const language = useLanguage()
   return (
     <li>
-      <button type="button" className={styles.row} onClick={() => onOpen(event)}>
+      <button
+        type="button"
+        className={emphasized ? `${styles.row} ${styles.emphasized}` : styles.row}
+        aria-current={emphasized ? true : undefined}
+        data-event-id={event.id}
+        onClick={() => onOpen(event)}
+      >
         <span className={styles.head}>
           <Badge>{t(`eventType.${event.type}`)}</Badge>
           {event.reviewResult === undefined ? null : (

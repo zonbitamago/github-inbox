@@ -13,6 +13,7 @@ describe('メインから届く状態の store（component-frontend.md 4.、ADR-
       'on:events:added',
       'on:events:reset',
       'on:prs:updated',
+      'on:ui:focusEvent',
     ])
   })
 
@@ -25,6 +26,7 @@ describe('メインから届く状態の store（component-frontend.md 4.、ADR-
       appState: null,
       events: [],
       prList: null,
+      focusRequest: null,
     })
     await store.start()
     expect(store.getSnapshot()).toEqual({
@@ -33,6 +35,7 @@ describe('メインから届く状態の store（component-frontend.md 4.、ADR-
       appState: appState(),
       events,
       prList: null,
+      focusRequest: null,
     })
   })
 
@@ -95,6 +98,20 @@ describe('メインから届く状態の store（component-frontend.md 4.、ADR-
     api.push('events:added', [githubEvent('IC_2', '2026-01-03T00:00:00Z')])
     await starting
     expect(store.getSnapshot().events.map((event) => event.id)).toEqual(['IC_2', 'IC_1'])
+  })
+
+  // F-08、component-frontend.md 5.「デスクトップ通知のクリック」
+  it('ui:focusEvent は、出来事を強調する頼みとして持つ。同じ出来事でも、届くたびに新しい頼みにする', async () => {
+    const api = createFakeApi({ state: appState() })
+    const store = createMainStore(api)
+    await store.start()
+    api.push('ui:focusEvent', { eventId: 'IC_1' })
+    const first = store.getSnapshot().focusRequest
+    expect(first?.eventId).toBe('IC_1')
+    api.push('ui:focusEvent', { eventId: 'IC_1' })
+    const second = store.getSnapshot().focusRequest
+    expect(second?.eventId).toBe('IC_1')
+    expect(second?.seq).not.toBe(first?.seq)
   })
 
   it('知らせをやめると、受け取りを外し、もう知らせない', async () => {

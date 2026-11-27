@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -102,5 +102,79 @@ describe('サインインし直す（CR-008、auth-flow.md 5.）', () => {
     await userEvent.click(screen.getByRole('button', { name: 'サインイン' }))
     expect(screen.getByRole('alert').textContent).toMatch(/サインインできませんでした/)
     expect(screen.getByRole('heading', { name: 'GitHub にサインインし直す' })).toBeTruthy()
+  })
+})
+
+// N-09、AC-38、Q-07、component-frontend.md 2.2 の DesktopNotificationBanner
+describe('デスクトップ通知を出せなかったことの知らせ（N-09、AC-38）', () => {
+  const FAILED_AT = '2026-01-02T03:10:00Z'
+  const failed = (failure: 'os_rejected' | 'outside_applications_folder') =>
+    appState({ desktopNotification: { failure, failedAt: FAILED_AT } })
+
+  it('OS が断ったら、理由と出せなかった時刻を出し、「OS の通知の設定を開く」で OS の設定を開くよう頼む', async () => {
+    const api = await renderPage(failed('os_rejected'))
+    const status = screen.getByRole('status')
+    expect(status.textContent).toMatch(
+      /デスクトップ通知を出せませんでした。OS の通知の設定で.*出せなかった時刻/,
+    )
+    expect(
+      within(status).getByText('出せなかった時刻').nextElementSibling?.getAttribute('datetime'),
+    ).toBe(FAILED_AT)
+    await userEvent.click(screen.getByRole('button', { name: 'OS の通知の設定を開く' }))
+    expect(api.invocations).toEqual([{ channel: 'os:openNotificationSettings', args: undefined }])
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('OS の設定を開けなければ、その旨を出す', async () => {
+    await renderPage(failed('os_rejected'), {
+      'os:openNotificationSettings': { ok: false, error: { code: 'internal' } },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'OS の通知の設定を開く' }))
+    expect(screen.getByRole('alert').textContent).toBe(
+      'OS の通知の設定を開けませんでした。OS の設定から「通知」を開いてください。',
+    )
+  })
+
+  it('アプリケーションフォルダの外から開いているなら、移して開き直すよう出す', async () => {
+    await renderPage(failed('outside_applications_folder'))
+    expect(screen.getByRole('status').textContent).toMatch(
+      /デスクトップ通知を出せませんでした。アプリケーションフォルダの外から開いているためです。/,
+    )
+    expect(screen.queryByRole('button', { name: 'OS の通知の設定を開く' })).toBeNull()
+  })
+
+  it('受け取れていない知らせとは別に出し、出せるようになったら消える', async () => {
+    const api = await renderPage(
+      appState({
+        ingest: { state: 'offline' },
+        desktopNotification: { failure: 'os_rejected', failedAt: FAILED_AT },
+      }),
+    )
+    expect(screen.getAllByRole('status')).toHaveLength(2)
+    act(() => api.push('state:changed', appState({ ingest: { state: 'offline' } })))
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(screen.queryByText(/デスクトップ通知を出せませんでした/)).toBeNull()
+  })
+})
+
+// F-08、AC-11、component-frontend.md 5.「デスクトップ通知のクリック」
+describe('デスクトップ通知のクリック（F-08）', () => {
+  const emphasizedRow = () =>
+    within(screen.getByRole('list'))
+      .getAllByRole('button')
+      .find((row) => row.getAttribute('aria-current') === 'true')
+
+  it('ui:focusEvent が届いたら、その出来事を強調する', async () => {
+    const api = await renderPage(appState())
+    act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
+    expect(emphasizedRow()?.textContent).toContain('ログイン画面')
+  })
+
+  it('サインインし直す画面を開いていても、出来事の一覧に戻して強調する', async () => {
+    const api = await renderPage(AUTH_FAILED)
+    await userEvent.click(screen.getByRole('button', { name: 'サインインし直す' }))
+    act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
+    expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
+    expect(emphasizedRow()?.textContent).toContain('ログイン画面')
   })
 })

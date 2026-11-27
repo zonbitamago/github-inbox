@@ -64,6 +64,14 @@ export const ja = {
   'ingestStatus.signInAgain': 'サインインし直す',
   'ingestStatus.retryAt': '再開する時刻',
   'ingestStatus.lastSuccessAt': '最後に受け取った時刻',
+  'desktopNotificationFailure.osRejected':
+    'デスクトップ通知を出せませんでした。OS の通知の設定で、このアプリの通知がオフになっているかもしれません。',
+  'desktopNotificationFailure.outsideApplicationsFolder':
+    'デスクトップ通知を出せませんでした。アプリケーションフォルダの外から開いているためです。アプリケーションフォルダに移してから、開き直してください。',
+  'desktopNotificationFailure.failedAt': '出せなかった時刻',
+  'desktopNotificationFailure.openSettings': 'OS の通知の設定を開く',
+  'desktopNotificationFailure.openSettingsFailed':
+    'OS の通知の設定を開けませんでした。OS の設定から「通知」を開いてください。',
   'eventType.review_requested': 'レビュー依頼',
   'eventType.review': 'レビュー',
   'eventType.comment': 'コメント',

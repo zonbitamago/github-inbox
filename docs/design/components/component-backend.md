@@ -7,6 +7,7 @@
 - 更新: 2026-11-27 デバイスフローをやめ、`github/device-flow-client.ts`・`auth/device-flow.ts` を外した（CR-007）
 - 更新: 2026-11-27 ⑭ S2 で `auth/auth-service.ts` を足した。キーチェーンの確かめを S7 に回した
 - 更新: 2026-11-27 ⑭ S3a で `core/select-threads.ts` を足した（CR-010）。取り込みの失敗の分け方と、認証から取り込みへの引き継ぎを書いた
+- 更新: 2026-11-27 ⑭ S4 で `notify/` の中身と、デスクトップ通知の文言・クリック・失敗・OS の通知の設定を開く先を書いた。Mac で OS の設定でオフにしても `failed` が出ないことを書いた（CR-011）
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
 
@@ -104,7 +105,9 @@ src/
     pr-list/
       pr-list-service.ts    検索3本を並べて投げ、自分待ちの理由を付ける
     notify/
-      notifier.ts           Electron の Notification、クリック・失敗の受け取り
+      notifier.ts           デスクトップ通知を出すか（core の判定）、クリック・失敗の受け取り（⑭ S4）
+      desktop-notification-text.ts  デスクトップ通知の文言（日本語・英語。⑭ S4）
+      electron-desktop-notification.ts  Electron の Notification を notifier の使う形に包む（⑭ S4）
     auth/
       pat.ts                PAT の確認
       auth-service.ts       立ち上げ時のトークンの読み出し・キーチェーンの案内・PAT の受け付け・サインアウトの流れ。状態は組み立てを通して app に知らせる（⑭ S2）。GET /user で確かめたら、組み立てを通して ingest に引き継ぐ（取り込みで 401 を受けたら `expire` で戻ってくる。⑭ S3a）
@@ -248,8 +251,13 @@ sequenceDiagram
 ### 5.4 デスクトップ通知とその失敗
 
 - `notify` は Electron の Notification で出す。タイトルは「種類・リポジトリ」、本文は「誰が・対象のタイトル」（AI案。抜粋は出さない。画面の外に出る文字を少なくするため）
-- クリックされたら窓を前に出し（最小化していれば戻す）、画面に `ui:focusEvent` を送る（F-08）
-- `failed` を受けたら（試作で Mac でも出ることを確かめた）、Mac でアプリケーションフォルダの外なら `outside_applications_folder`、それ以外は `os_rejected` として画面に知らせる（N-09、Q-07）。次にデスクトップ通知が出せたら知らせを消す
+  - ⑭ S4: 種類にはレビューの結果と CI の結果（GitHub の値のまま）を添え、リポジトリは一覧と同じ `owner/name #番号` にした（例: 「レビュー（修正依頼） · owner/name #7」「bob: 対象のタイトル」）。言葉は設定の言語（日本語・英語）で、画面の i18n と同じもの
+- 取り込みは、定期の取り込み（`live`）で新しく保存した出来事を、画面に送るのと同時に `notify` に渡す（組み立て `index.ts` がつなぐ）。出すかは core の判定（domain-model.md 4.4）で決め、まとめずに1件ずつ、古い順に出す（⑭ S4）
+- クリックされたら窓を前に出し（最小化していれば戻す。Mac では他のアプリより前に出す）、画面に `ui:focusEvent` を送る（F-08）。出したデスクトップ通知は、クリック・閉じる・失敗まで（多くて100件）持っておく（手放すとクリックを受け取れないことがあるため）
+- `failed` を受けたら（試作で Mac でも出ることを確かめた）、Mac でアプリケーションフォルダの外なら `outside_applications_folder`、それ以外は `os_rejected` として画面に知らせる（N-09、Q-07）。OS がデスクトップ通知に対応していないときも `os_rejected`。次にデスクトップ通知が出せたら知らせを消す
+- Mac（macOS 26）で、OS の設定で本アプリの「通知を許可」をオフにしても、Electron は `failed` ではなく `show` を出す（OS は頼みを受け付け、何も出さない。⑭ S4 の MC-03 で確かめた。CR-011）。アプリからは見分けられないため、試しのデスクトップ通知で利用者に確かめてもらう（D-033。component-frontend.md 3. の手順4と設定の画面）。OS の通知の設定を読む部品は足さない
+- アプリケーションフォルダの外から開いても、同じ識別子のアプリを一度でもアプリケーションフォルダで開いていれば、OS は断らずに出す（⑭ S4 の MC-04）。`outside_applications_folder` になるのは、一度もアプリケーションフォルダに置かずに開いたとき（試作の一時フォルダ、DMG やダウンロードフォルダから初めて開く）と見込む。S7 の DMG で確かめる
+- ログには、出した記録（出来事の id・種類・発生の時刻。`notify.shown`）と失敗（出来事の id・理由。`notify.failed`）を書く。タイトル・本文は書かない（S-09）
 - 使い始めの案内 (4) の試しのデスクトップ通知も同じ部品で出す
 
 ---
@@ -321,6 +329,7 @@ sequenceDiagram
 | 自動起動（F-25） | `app.setLoginItemSettings`・`getLoginItemSettings` | Mac は試作で確かめた。Windows は確かめていない（D-021） |
 | アプリケーションフォルダへの移動（F-36 (1)） | `app.isInApplicationsFolder()`・`app.moveToApplicationsFolder()` | DMG の中（読み取り専用）から開いた場合も移せるか、署名しないアプリで動くかは ⑭ で手動で確かめる |
 | ブラウザで開く（F-12・F-17・F-36 (3)） | `shell.openExternal` | `core/url-guard` を通したものだけ（I-8） |
+| OS の通知の設定を開く（N-09・F-36 (4)） | `shell.openExternal` | 開く先はメインが OS ごとに決めた固定の先だけ（S-06）。Mac は `x-apple.systempreferences:com.apple.Notifications-Settings.extension`（macOS 13 以降のシステム設定の「通知」）、Windows は `ms-settings:notifications`（⑭ S4） |
 | コピー（F-34） | `clipboard.writeText` | URL の検査を通したものだけを、改行でつないで書く |
 | スリープからの復帰 | `powerMonitor` | 6.1 |
 | メニュー | `Menu` | 既定のメニューの「再読み込み」（画面ごと読み直す）と「開発者ツール」は配布物では外す。キーボードの割り当ては component-frontend.md 5.（AI案） |
@@ -371,5 +380,5 @@ sequenceDiagram
 | `app.moveToApplicationsFolder()` が署名しないアプリ・DMG の中から動くか | ⑭ で手動で確かめる（AI） |
 | 版が変わったとき、キーチェーンの確認が出るのが safeStorage を呼んだときか、立ち上げ直後か（auth-flow.md 4.） | ⑭ の S7 で手動で確かめる（AI。版の違う配布物が要るため。2026-11-27 技術者が決めた） |
 | Windows の自動起動・デスクトップ通知 | 確かめていない（D-021）。⑫ のリスク登録簿 |
-| `/Applications` に置いた配布物でデスクトップ通知が出るか（試作は `~/Applications` だけで確かめた） | ⑭ で手動で確かめる（AI）。Mac の利用者は全員が管理者の権限を持つ（D-028。DR-07） |
+| `/Applications` に置いた配布物でデスクトップ通知が出るか（試作は `~/Applications` だけで確かめた） | **確かめた**（2026-11-27。⑭ S4 の MC-01: `/Applications` に置いた ad-hoc 署名の配布物で出て、クリックで前に出た）。Mac の利用者は全員が管理者の権限を持つ（D-028。DR-07） |
 | キーチェーンの確認で「許可」と「常に許可」のどちらを案内するか | ⑭ の S7 で手動で確かめる（AI。DR-06。auth-flow.md 7.）。S2 では要件の文言（「許可」）で作る（2026-11-27 技術者が決めた） |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createGitHubOpener } from './external'
+import { createDesktopNotificationSettingsOpener, createGitHubOpener } from './external'
 
 function setup() {
   const opened: string[] = []
@@ -31,4 +31,23 @@ describe('ブラウザで GitHub を開く（ipc-contract.md 2. の shell:openGi
     })
     expect(opened).toEqual([])
   })
+})
+
+// N-09・F-36 (4)。開く先はメインが OS ごとに決めた固定の先だけ（ipc-contract.md 2.、security-rules.md S-06）
+describe('OS のデスクトップ通知の設定を開く（os:openNotificationSettings）', () => {
+  it.each([
+    ['Mac', 'darwin', 'x-apple.systempreferences:com.apple.Notifications-Settings.extension'],
+    ['Windows', 'win32', 'ms-settings:notifications'],
+  ] satisfies [string, 'darwin' | 'win32', string][])(
+    '%s は OS の設定の通知の画面を開く',
+    async (_name, platform, url) => {
+      const opened: string[] = []
+      const openSettings = createDesktopNotificationSettingsOpener(platform, (target) => {
+        opened.push(target)
+        return Promise.resolve()
+      })
+      await expect(openSettings()).resolves.toEqual({ ok: true, value: undefined })
+      expect(opened).toEqual([url])
+    },
+  )
 })
