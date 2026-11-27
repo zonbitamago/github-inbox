@@ -83,6 +83,11 @@ async function renderPanel(
 }
 
 const rows = () => within(screen.getByRole('list')).getAllByRole('button')
+/** 見出しの行の、取得中の表示 */
+const loadingStatus = () =>
+  within(screen.getByRole('heading', { level: 2 }).parentElement ?? document.body).getByRole(
+    'status',
+  )
 const rowFor = (title: string) => screen.getByRole('button', { name: new RegExp(title) })
 
 describe('PR の一覧の1行（F-14・F-15、component-frontend.md 2.2）', () => {
@@ -231,10 +236,10 @@ describe('リロード（F-20、AC-20）', () => {
   it('取得中はそう出す。一覧は出したまま', async () => {
     const api = await renderPanel()
     act(() => api.push('state:changed', appState({ prList: { loading: true } })))
-    expect(screen.getByRole('status').textContent).toBe('取得しています')
+    expect(loadingStatus().textContent).toBe('取得しています')
     expect(rows()).toHaveLength(4)
     act(() => api.push('state:changed', appState({ prList: { loading: false } })))
-    expect(screen.getByRole('status').textContent).toBe('')
+    expect(loadingStatus().textContent).toBe('')
   })
 
   it.each<[string, AppState['prList']['error'], string]>([
@@ -268,12 +273,80 @@ describe('一覧が無いとき', () => {
 
   it('取得中なら、取得中の表示だけを出す', async () => {
     await renderPanel({ prList: null, state: appState({ prList: { loading: true } }) })
-    expect(screen.getByRole('status').textContent).toBe('取得しています')
+    expect(loadingStatus().textContent).toBe('取得しています')
     expect(screen.queryByText('まだ PR の一覧を取っていません')).toBeNull()
   })
 
   it('期間内に関わった PR が無ければそう出す', async () => {
     await renderPanel({ prList: prListSnapshot([]) })
     expect(screen.getByText('期間内に関わった PR はありません')).toBeTruthy()
+  })
+})
+
+// F-34、AC-36、component-frontend.md 5.「すべてのリンクをコピー」
+describe('すべてのリンクをコピー（F-34、AC-36）', () => {
+  const copyButton = () => screen.getByRole('button', { name: 'すべてのリンクをコピー' })
+  const copiedStatus = () => within(copyButton().parentElement ?? document.body).getByRole('status')
+
+  it('今の絞り込みの結果を、表示の順にメインに渡し、コピーした件数を出す', async () => {
+    const api = await renderPanel({
+      answers: { 'clipboard:copyLinks': { ok: true, value: { count: 2 } } },
+    })
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: '自分待ちの理由' }),
+      '自分待ちの理由あり（どれか1つ）',
+    )
+    await userEvent.click(copyButton())
+
+    expect(api.invocations).toEqual([
+      {
+        channel: 'clipboard:copyLinks',
+        args: {
+          urls: [
+            'https://github.com/example-org/mobile/pull/121',
+            'https://github.com/example-org/api/pull/7',
+          ],
+        },
+      },
+    ])
+    expect(copiedStatus().textContent).toBe('2 件のリンクをコピーしました')
+  })
+
+  it('絞り込みを変えたら、コピーした件数の表示を消す', async () => {
+    await renderPanel({ answers: { 'clipboard:copyLinks': { ok: true, value: { count: 4 } } } })
+    await userEvent.click(copyButton())
+    expect(copiedStatus().textContent).toBe('4 件のリンクをコピーしました')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '状態' }), '下書き')
+    expect(copiedStatus().textContent).toBe('')
+  })
+
+  it('出ている PR が無ければ押せない', async () => {
+    await renderPanel()
+    await userEvent.type(screen.getByRole('textbox', { name: '文字で探す' }), '無い語')
+    expect(copyButton()).toHaveProperty('disabled', true)
+  })
+
+  it('コピーできなければ理由を出す', async () => {
+    await renderPanel({
+      answers: { 'clipboard:copyLinks': { ok: false, error: { code: 'url_not_allowed' } } },
+    })
+    await userEvent.click(copyButton())
+    expect(screen.getByRole('alert').textContent).toBe(
+      'リンクをコピーできませんでした。もう一度押してください。',
+    )
+    expect(copiedStatus().textContent).toBe('')
+  })
+
+  it('英語では件数を英語の文で出す', async () => {
+    await renderPanel({
+      state: appState({}, { language: 'en' }),
+      answers: { 'clipboard:copyLinks': { ok: true, value: { count: 4 } } },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Copy all links' }))
+    expect(
+      within(
+        screen.getByRole('button', { name: 'Copy all links' }).parentElement ?? document.body,
+      ).getByRole('status').textContent,
+    ).toBe('Copied 4 links')
   })
 })

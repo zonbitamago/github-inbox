@@ -1,8 +1,8 @@
 // ブラウザで開く（component-backend.md 8.、security-rules.md S-06）。
 // 外で開くのはこのファイルだけ（ESLint で止める）。URL の検査（core/url-guard、I-8）を通したものだけを開く。
 // OS の設定画面は、メインが OS ごとに決めた固定の先だけを開く（画面から URL は受け取らない。S-06）。
-// クリップボード（F-34）は S5・S6 で足す。
-import { shell } from 'electron'
+// クリップボード（F-34）に書くのも、URL の検査を通したものだけ（component-backend.md 8.）。
+import { clipboard, shell } from 'electron'
 import type { Result } from '../../shared/ipc-contract'
 import { isGitHubUrl } from '../core/url-guard'
 
@@ -32,5 +32,20 @@ export function createDesktopNotificationSettingsOpener(
   return async () => {
     await open(DESKTOP_NOTIFICATION_SETTINGS_URLS[platform])
     return { ok: true, value: undefined }
+  }
+}
+
+/** テストでは書く関数を差し替える */
+export function createLinkCopier(
+  write: (text: string) => void = (text) => clipboard.writeText(text),
+): (args: { urls: string[] }) => Promise<Result<{ count: number }>> {
+  return ({ urls }) => {
+    // 1件でも検査に通らなければ全体を断る（ipc-contract.md 2.）
+    if (!urls.every(isGitHubUrl)) {
+      return Promise.resolve({ ok: false, error: { code: 'url_not_allowed' } })
+    }
+    // 0件なら、前にコピーしたものを消さないよう書かない
+    if (urls.length > 0) write(urls.join('\n'))
+    return Promise.resolve({ ok: true, value: { count: urls.length } })
   }
 }

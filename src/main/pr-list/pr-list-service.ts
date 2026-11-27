@@ -2,7 +2,7 @@
 // サインインしたとき（立ち上げを含む）とリロードで、検索3本を同時に投げ（github-api.md 5.）、
 // core/waiting-reasons でまとめて自分待ちの理由を付け、画面に送る（prs:updated）。
 // 取得中にもう一度リロードが押されたら、新しく投げずに今の取得の結果を返す。
-// サインインし直したら、取得中のものは捨てて取り直す（前のアカウントの一覧を出さないため）。
+// サインインし直したら、取得中のものは捨てて取り直す（前のアカウントの一覧を出さないため）。期間を変えたときも取り直す。
 // ログには件数・期間・時間だけを書く。タイトルは書かない（Q-15）。
 import type { AppState, IpcErrorCode, PrListSnapshot, Result } from '../../shared/ipc-contract'
 import { buildPrList } from '../core/waiting-reasons'
@@ -85,6 +85,12 @@ export class PrListService {
       return Promise.resolve(failure('not_signed_in'))
     }
     return this.fetch()
+  }
+
+  /** 期間を変えた（F-16）。取得中でも、それを捨てて今の期間で取り直す */
+  refresh(): Promise<Result<PrListSnapshot>> {
+    if (this.viewer === undefined) return Promise.resolve(failure('not_signed_in'))
+    return this.start(this.viewer)
   }
 
   /** 認証が切れた・サインアウトする・サインインし直す前。取得中のものは捨てる。最後に取った一覧は残す */

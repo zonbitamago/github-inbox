@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EVENT_TYPES, REVIEW_RESULTS } from '../../shared/domain'
 import { en } from './en'
 import { ja } from './ja'
-import { translate } from './index'
+import { fillMessage, translate } from './index'
 
 // component-frontend.md 5.「言語（F-26）」
 describe('文言', () => {
@@ -32,5 +32,20 @@ describe('文言', () => {
     ['en', 'eventType.review_requested', 'Review requested'],
   ] as const)('%s: %s → %s', (language, key, expected) => {
     expect(translate(language, key)).toBe(expected)
+  })
+})
+
+describe('文言への差し込み', () => {
+  it.each([
+    [
+      '件数を入れる',
+      '{count} 件のリンクをコピーしました',
+      { count: 3 },
+      '3 件のリンクをコピーしました',
+    ],
+    ['無い名前はそのまま', '{count} と {other}', { count: 1 }, '1 と {other}'],
+    ['差し込みの無い文言はそのまま', 'コピーしました', { count: 1 }, 'コピーしました'],
+  ])('%s', (_name, message, values, expected) => {
+    expect(fillMessage(message, values)).toBe(expected)
   })
 })

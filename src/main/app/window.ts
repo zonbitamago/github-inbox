@@ -37,18 +37,29 @@ export function createMainWindow(options: { devServerUrl?: string }): BrowserWin
 }
 
 /**
- * メニュー（component-backend.md 8.）。配布物では、画面ごとの再読み込みと開発者ツールを外す。
- * Mac はコピー・貼り付けのためにアプリと編集と窓のメニューを残す。Windows はメニューを出さない。
- * 開発中は Electron の既定のメニューのままにする。
+ * メニュー（component-backend.md 8.）。画面ごとの再読み込み（Cmd+R・Ctrl+R）は、開発中も配布物も入れない。
+ * Cmd+R は PR の一覧のリロードに使うため（component-frontend.md 5.「キーボード」。⑭ S6a）。
+ * 配布物: Mac はコピー・貼り付けのためにアプリと編集と窓のメニューを残し、開発者ツールは外す。Windows はメニューを出さない。
+ * 開発中: 上に加えて、開発者ツールと強制の再読み込み（Shift+Cmd+R）だけを置く。
+ * null はメニューを出さない。
  */
+export function applicationMenuTemplate(options: {
+  packaged: boolean
+  platform: NodeJS.Platform
+}): MenuItemConstructorOptions[] | null {
+  const develop: MenuItemConstructorOptions[] = options.packaged
+    ? []
+    : [{ label: '開発', submenu: [{ role: 'toggleDevTools' }, { role: 'forceReload' }] }]
+  if (options.platform === 'darwin') {
+    return [{ role: 'appMenu' }, { role: 'editMenu' }, ...develop, { role: 'windowMenu' }]
+  }
+  return develop.length === 0 ? null : develop
+}
+
 export function applyApplicationMenu(options: {
   packaged: boolean
   platform: NodeJS.Platform
 }): void {
-  if (!options.packaged) return
-  const template: MenuItemConstructorOptions[] =
-    options.platform === 'darwin'
-      ? [{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]
-      : []
-  Menu.setApplicationMenu(template.length === 0 ? null : Menu.buildFromTemplate(template))
+  const template = applicationMenuTemplate(options)
+  Menu.setApplicationMenu(template === null ? null : Menu.buildFromTemplate(template))
 }

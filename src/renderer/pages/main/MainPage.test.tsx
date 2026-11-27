@@ -30,13 +30,19 @@ const AUTH_FAILED = appState({
 async function renderPage(state: AppState, answers: FakeAnswers = {}) {
   const api = createFakeApi({ state, events, prList, answers })
   const store = createMainStore(api)
+  let settingsOpened = 0
   render(
     <MainStoreProvider store={store}>
-      <MainPage events={events} />
+      <MainPage
+        events={events}
+        onOpenSettings={() => {
+          settingsOpened += 1
+        }}
+      />
     </MainStoreProvider>,
   )
   await act(() => store.start())
-  return api
+  return Object.assign(api, { settingsOpened: () => settingsOpened })
 }
 
 // N-08、AC-14、component-frontend.md 2.2 の IngestStatusBanner
@@ -235,5 +241,99 @@ describe('出来事の一覧と PR の一覧のタブ', () => {
     await userEvent.click(screen.getByRole('tab', { name: '出来事' }))
     await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
     expect(within(panelOf('PR')).getAllByRole('listitem')).toHaveLength(1)
+  })
+})
+
+// F-33、AC-35（並べ方）
+describe('左右に並べる（F-33、AC-35）', () => {
+  const SIDE_BY_SIDE = appState({}, { layout: 'side_by_side' })
+
+  it('出来事の一覧と PR の一覧が同時に見え、タブは出ない', async () => {
+    await renderPage(SIDE_BY_SIDE)
+    expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'PR' })).toBeTruthy()
+    expect(screen.queryByRole('tablist')).toBeNull()
+  })
+
+  it('設定で並べ方が変わったら、その形に切り替わる', async () => {
+    const api = await renderPage(appState())
+    expect(screen.getByRole('tablist')).toBeTruthy()
+    act(() => api.push('state:changed', SIDE_BY_SIDE))
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'PR' })).toBeTruthy()
+  })
+
+  it('「設定」で設定を開く', async () => {
+    const api = await renderPage(SIDE_BY_SIDE)
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    expect(api.settingsOpened()).toBe(1)
+  })
+})
+
+// component-frontend.md 5.「キーボード」（AI案。DR-03）
+describe('キーボード', () => {
+  const searchBox = (name: string) =>
+    within(screen.getByRole('region', { name })).getByRole('textbox', { name: '文字で探す' })
+
+  it('タブの並びの「設定」で設定を開く', async () => {
+    const api = await renderPage(appState())
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    expect(api.settingsOpened()).toBe(1)
+  })
+
+  it('Cmd+R で PR の一覧をリロードするよう頼む（Mac）', async () => {
+    const api = await renderPage(appState())
+    await userEvent.keyboard('{Meta>}r{/Meta}')
+    expect(api.invocations).toEqual([{ channel: 'prs:reload', args: undefined }])
+  })
+
+  it('Windows では Ctrl+R。Mac の Ctrl+R では何もしない', async () => {
+    const mac = await renderPage(appState())
+    await userEvent.keyboard('{Control>}r{/Control}')
+    expect(mac.invocations).toEqual([])
+    cleanup()
+
+    const windows = await renderPage(
+      appState({ appInfo: { version: '0.1.0', platform: 'win32', inApplicationsFolder: null } }),
+    )
+    await userEvent.keyboard('{Control>}r{/Control}')
+    expect(windows.invocations).toEqual([{ channel: 'prs:reload', args: undefined }])
+  })
+
+  it('Cmd+F で今のタブの一覧の検索欄へ移る', async () => {
+    await renderPage(appState())
+    await userEvent.keyboard('{Meta>}f{/Meta}')
+    expect(document.activeElement).toBe(searchBox('出来事'))
+
+    await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
+    await userEvent.keyboard('{Meta>}f{/Meta}')
+    expect(document.activeElement).toBe(searchBox('PR'))
+  })
+
+  it('左右に並べているときは、キーボードの位置がある方の検索欄へ（無ければ出来事の一覧）', async () => {
+    await renderPage(appState({}, { layout: 'side_by_side' }))
+    await userEvent.keyboard('{Meta>}f{/Meta}')
+    expect(document.activeElement).toBe(searchBox('出来事'))
+
+    await userEvent.click(
+      within(screen.getByRole('region', { name: 'PR' })).getByRole('button', { name: 'リロード' }),
+    )
+    await userEvent.keyboard('{Meta>}f{/Meta}')
+    expect(document.activeElement).toBe(searchBox('PR'))
+  })
+
+  it('Cmd+, で設定を開く', async () => {
+    const api = await renderPage(appState())
+    await userEvent.keyboard('{Meta>},{/Meta}')
+    expect(api.settingsOpened()).toBe(1)
+  })
+
+  it('サインインし直す画面では、キーボードの割り当ては効かない', async () => {
+    const api = await renderPage(AUTH_FAILED)
+    await userEvent.click(screen.getByRole('button', { name: 'サインインし直す' }))
+    await userEvent.keyboard('{Meta>}r{/Meta}')
+    await userEvent.keyboard('{Meta>},{/Meta}')
+    expect(api.invocations).toEqual([])
+    expect(api.settingsOpened()).toBe(0)
   })
 })

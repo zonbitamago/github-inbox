@@ -9,6 +9,7 @@
 - 更新: 2026-11-27 ⑭ S3a で `core/select-threads.ts` を足した（CR-010）。取り込みの失敗の分け方と、認証から取り込みへの引き継ぎを書いた
 - 更新: 2026-11-27 ⑭ S4 で `notify/` の中身と、デスクトップ通知の文言・クリック・失敗・OS の通知の設定を開く先を書いた。Mac で OS の設定でオフにしても `failed` が出ないことを書いた（CR-011）
 - 更新: 2026-11-27 ⑭ S5 で、PR の一覧を取るときの細部（サインイン・サインアウトとの関係、失敗、続きのページ、ログ）を 5.3 に書いた
+- 更新: 2026-11-27 ⑭ S6a で、設定を変えたときの効き目（`app/settings-change.ts`）、自動起動、コピー、開発中のメニューを 8. に書いた
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
 
@@ -333,13 +334,14 @@ sequenceDiagram
 | --- | --- | --- |
 | 窓（F-23・F-24） | `BrowserWindow` を1つ。`window-all-closed` で終了 | Mac の Dock・Cmd+Tab、Windows の Alt+Tab に出る（試作で確かめた）。`app.requestSingleInstanceLock()` で二重の立ち上げを防ぐ（自動起動と手動の重なりなど） |
 | 画面の安全（ADR-007、Q-11） | `contextIsolation: true`・`nodeIntegration: false`・`sandbox: true`。画面から別の URL へ移る・新しい窓を開くことを止める（`will-navigate`・`setWindowOpenHandler`） | CSP は component-frontend.md |
-| 自動起動（F-25） | `app.setLoginItemSettings`・`getLoginItemSettings` | Mac は試作で確かめた。Windows は確かめていない（D-021） |
+| 自動起動（F-25） | `app.setLoginItemSettings`・`getLoginItemSettings` | Mac は試作で確かめた。Windows は確かめていない（D-021）。⑭ S6a: 変えた後に OS から読み直した値を返し、画面に知らせる（`app/login-item.ts`）。開発用の立ち上げでは Electron そのものがログイン項目に入るため、確かめは配布物と同じ作りのビルドで（manual-checklist.md の MC-10） |
 | アプリケーションフォルダへの移動（F-36 (1)） | `app.isInApplicationsFolder()`・`app.moveToApplicationsFolder()` | DMG の中（読み取り専用）から開いた場合も移せるか、署名しないアプリで動くかは ⑭ で手動で確かめる |
 | ブラウザで開く（F-12・F-17・F-36 (3)） | `shell.openExternal` | `core/url-guard` を通したものだけ（I-8） |
 | OS の通知の設定を開く（N-09・F-36 (4)） | `shell.openExternal` | 開く先はメインが OS ごとに決めた固定の先だけ（S-06）。Mac は `x-apple.systempreferences:com.apple.Notifications-Settings.extension`（macOS 13 以降のシステム設定の「通知」）、Windows は `ms-settings:notifications`（⑭ S4） |
-| コピー（F-34） | `clipboard.writeText` | URL の検査を通したものだけを、改行でつないで書く |
+| コピー（F-34） | `clipboard.writeText` | URL の検査を通したものだけを、改行でつないで書く（⑭ S6a: `app/external.ts`。1件でも通らなければ全体を断り、0件なら書かない） |
+| 設定の変更（F-09・F-16・F-26・F-32・F-33） | `store/settings-store` | ⑭ S6a: `app/settings-change.ts`。保存して画面に知らせる。出来事の一覧の日数が変わったら、保存してある出来事から一覧を入れ替える（`events:reset`。取り直さない。domain-model.md 5.）。PR の一覧の期間が変わったら、取得中でも取り直す。デスクトップ通知・言語は使う側が毎回設定を読む |
 | スリープからの復帰 | `powerMonitor` | 6.1 |
-| メニュー | `Menu` | 既定のメニューの「再読み込み」（画面ごと読み直す）と「開発者ツール」は配布物では外す。キーボードの割り当ては component-frontend.md 5.（AI案） |
+| メニュー | `Menu` | 既定のメニューの「再読み込み」（画面ごと読み直す）と「開発者ツール」は配布物では外す。キーボードの割り当ては component-frontend.md 5.（AI案）。⑭ S6a: 開発中も「再読み込み」（Cmd+R）は入れず、開発者ツールと強制の再読み込み（Shift+Cmd+R）だけを足す（Cmd+R を PR の一覧のリロードに使うため。`app/window.ts` の `applicationMenuTemplate`） |
 
 ---
 

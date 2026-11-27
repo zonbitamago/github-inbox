@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createDesktopNotificationSettingsOpener, createGitHubOpener } from './external'
+import {
+  createDesktopNotificationSettingsOpener,
+  createGitHubOpener,
+  createLinkCopier,
+} from './external'
 
 function setup() {
   const opened: string[] = []
@@ -50,4 +54,44 @@ describe('OS のデスクトップ通知の設定を開く（os:openNotification
       expect(opened).toEqual([url])
     },
   )
+})
+
+// F-34、AC-36。コピーするのも URL の検査（I-8）を通したものだけ（ipc-contract.md 2. の clipboard:copyLinks）
+describe('リンクをまとめてコピーする（clipboard:copyLinks）', () => {
+  function copier() {
+    const written: string[] = []
+    const copy = createLinkCopier((text) => written.push(text))
+    return { copy, written }
+  }
+
+  it('渡された順に、1行1つずつ書き、件数を返す', async () => {
+    const { copy, written } = copier()
+    const urls = [
+      'https://github.com/example-org/app/pull/101',
+      'https://github.com/example-org/api/pull/7',
+    ]
+    await expect(copy({ urls })).resolves.toEqual({ ok: true, value: { count: 2 } })
+    expect(written).toEqual([
+      'https://github.com/example-org/app/pull/101\nhttps://github.com/example-org/api/pull/7',
+    ])
+  })
+
+  it('1件でも検査に通らなければ、全体を断り、何も書かない', async () => {
+    const { copy, written } = copier()
+    await expect(
+      copy({
+        urls: [
+          'https://github.com/example-org/app/pull/101',
+          'https://github.com.example.com/example-org/app/pull/1',
+        ],
+      }),
+    ).resolves.toEqual({ ok: false, error: { code: 'url_not_allowed' } })
+    expect(written).toEqual([])
+  })
+
+  it('0件なら何も書かない（前にコピーしたものを消さない）', async () => {
+    const { copy, written } = copier()
+    await expect(copy({ urls: [] })).resolves.toEqual({ ok: true, value: { count: 0 } })
+    expect(written).toEqual([])
+  })
 })

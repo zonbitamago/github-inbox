@@ -2,10 +2,11 @@
 // 一覧はメインが取り、更新の新しい順で届く（prs:updated）。リロードはメインに頼み（prs:reload）、取得の状況と失敗は AppState.prList で出す。
 // 取れなかったときも、前に取った一覧は残して出す。絞り込みは画面の中だけの状態で、保存しない（component-frontend.md 4.）。
 // 開くのはメインに頼む（URL はメインが確かめる。I-8）。
+// 「すべてのリンクをコピー」は、今の絞り込みの結果を表示の順にメインに渡す（F-34、AC-36。component-frontend.md 5.）。
 import { useMemo, useState } from 'react'
 import type { PullRequestItem } from '../../../shared/domain'
 import type { AppState, IpcErrorCode, PrListSnapshot } from '../../../shared/ipc-contract'
-import { useLanguage, useT, type MessageKey } from '../../i18n'
+import { fillMessage, useLanguage, useT, type MessageKey } from '../../i18n'
 import { formatDateTime, formatDays, formatRelativeTime } from '../../i18n/format'
 import { useInvoke } from '../../main-store/use-main-store'
 import { Button } from '../../ui/Button'
@@ -53,6 +54,9 @@ export function PrListPanel({
   const [filter, setFilter] = useState<PrFilter>(NO_FILTER)
   const [openFailed, setOpenFailed] = useState(false)
   const [reloadFailed, setReloadFailed] = useState(false)
+  /** コピーした件数（「N 件コピーしました」）。絞り込みを変えたら消す */
+  const [copied, setCopied] = useState<number | undefined>(undefined)
+  const [copyFailed, setCopyFailed] = useState(false)
 
   const items = useMemo(() => prList?.items ?? [], [prList])
   const visible = useMemo(() => filterPrs(items, filter), [items, filter])
@@ -66,6 +70,23 @@ export function PrListPanel({
       await invoke('prs:reload')
     } catch {
       setReloadFailed(true)
+    }
+  }
+
+  const changeFilter = (next: PrFilter) => {
+    setFilter(next)
+    setCopied(undefined)
+  }
+
+  const copyLinks = async () => {
+    setCopied(undefined)
+    setCopyFailed(false)
+    try {
+      const result = await invoke('clipboard:copyLinks', { urls: visible.map((item) => item.url) })
+      if (result.ok) setCopied(result.value.count)
+      else setCopyFailed(true)
+    } catch {
+      setCopyFailed(true)
     }
   }
 
@@ -123,7 +144,15 @@ export function PrListPanel({
         </span>
         <Button onClick={() => void reload()}>{t('prList.reload')}</Button>
       </div>
-      <PrFilterBar filter={filter} repositories={repositories} onChange={setFilter} />
+      <PrFilterBar filter={filter} repositories={repositories} onChange={changeFilter} />
+      <div className={styles.actions}>
+        <Button disabled={visible.length === 0} onClick={() => void copyLinks()}>
+          {t('prList.copyLinks')}
+        </Button>
+        <span role="status" className={styles.copied}>
+          {copied === undefined ? '' : fillMessage(t('prList.copied'), { count: copied })}
+        </span>
+      </div>
       {error === undefined ? null : (
         <p role="alert" className={styles.error}>
           {t(error)}
@@ -132,6 +161,11 @@ export function PrListPanel({
       {openFailed ? (
         <p role="alert" className={styles.error}>
           {t('prList.openFailed')}
+        </p>
+      ) : null}
+      {copyFailed ? (
+        <p role="alert" className={styles.error}>
+          {t('prList.copyFailed')}
         </p>
       ) : null}
       {body}
