@@ -1,0 +1,6 @@
+/* 探した語の強調（D-032）。色はラベルの primary の組を使う（design-system.md 2.2。地と文字のコントラスト比は6以上） */
+.mark {
+  border-radius: var(--radius-sm);
+  background: var(--color-badge-primary-bg);
+  color: var(--color-badge-primary-fg);
+}
