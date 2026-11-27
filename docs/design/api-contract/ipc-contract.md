@@ -5,6 +5,7 @@
 - 状態: 技術者が確認済み（2026-11-26）。⑬ B1 で、`invoke` の形と `SettingsPatch` の送り方を明確にした（技術者の確認待ち）
 - 更新: 2026-11-27 デバイスフローをやめ、`auth:startDeviceFlow`・`auth:cancelDeviceFlow`・`AppState.auth.deviceFlow`・`device_flow_expired`・`device_flow_denied` を外した（CR-007）
 - 更新: 2026-11-27 `onboarding:sendTestNotification` の `shown` の意味（OS が受け付けた）と、設定の画面からも使うことを書いた。型は変えていない（CR-011・D-033）
+- 更新: 2026-11-27 `SettingsPatch` で画面の配色 `appearance` を変えられるようにした。チャンネルは足していない（CR-012・D-034）
 
 本アプリには自前のサーバーが無いため、OpenAPI の仕様は作らない（ADR-001）。画面とメインプロセスの間の IPC が、この案件の「API の契約」に当たる。実装では `src/shared/ipc-contract.ts` に zod のスキーマとして置き、**これを唯一の正**とする（型はスキーマから作る）。
 
@@ -29,7 +30,7 @@
 | `events:list` | なし | `GitHubEvent[]`。出来事の一覧の日数以内、発生の新しい順 | F-11・F-32 |
 | `prs:get` | なし | `PrListSnapshot \| null`（最後に取った一覧） | F-15 |
 | `prs:reload` | なし | `Result<PrListSnapshot>`。取得中なら、その取得の結果を返す | F-20 |
-| `settings:update` | `SettingsPatch`（設定の一部） | `Result<Settings>` | F-09・F-16・F-26・F-32・F-33 |
+| `settings:update` | `SettingsPatch`（設定の一部） | `Result<Settings>` | F-09・F-16・F-26・F-32・F-33・F-35 |
 | `loginItem:set` | `{ enabled: boolean }` | `Result<{ enabled: boolean }>` | F-25 |
 | `auth:submitPat` | `{ token: string }`（1〜255文字） | `Result<{ login: string }>` | F-27・F-36 (2) |
 | `auth:continueAfterKeychainNotice` | なし | `Result<void>` | F-36 (5) |
@@ -41,7 +42,7 @@
 | `onboarding:sendTestNotification` | なし | `Result<{ outcome: 'shown' \| 'failed' \| 'unknown' }>`。5秒待って、出た・失敗した・分からない。`shown` は OS が受け付けたという意味で、Mac では OS の設定でオフでも `shown` になる（CR-011）。設定の画面の「デスクトップ通知が出ないとき」からも使う（D-033） | F-36 (4)・N-09 |
 | `onboarding:complete` | なし | `Result<void>` | F-36 |
 
-- `SettingsPatch` で変えられるのは `desktopNotification`・`prPeriodDays`・`eventDays`・`layout`・`language` だけ。`onboarding`・`lastLaunchedVersion` は画面からは変えられない。送るのは最上位の項目の一部で、`desktopNotification` は丸ごと送る（種類ごとの一部だけは送らない。⑬ B1 で明確にした）
+- `SettingsPatch` で変えられるのは `desktopNotification`・`prPeriodDays`・`eventDays`・`layout`・`language`・`appearance`（CR-012）だけ。`onboarding`・`lastLaunchedVersion` は画面からは変えられない。送るのは最上位の項目の一部で、`desktopNotification` は丸ごと送る（種類ごとの一部だけは送らない。⑬ B1 で明確にした）
 - 日数は1〜30の整数。範囲外は `invalid_argument`
 
 ---

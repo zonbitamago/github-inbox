@@ -5,6 +5,7 @@
 - 状態: 技術者が確認済み（2026-11-26）。保存の形式（JSON）と問い合わせの方式（REST と GraphQL の併用）は技術者が決めた（ADR-009・010）。「AI案」と書いた項目も技術者がこの内容で確認した。9. は依頼者が確認した（D-026）
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-05・16・17・20。4.2〜4.4 に規則の番号 PT・WR・DN を振った）
 - 更新: 2026-11-27 `AuthMethod` から `device_flow` を外した（CR-007）。10. 要確認 1 を確かめた結果を書いた（0-5）
+- 更新: 2026-11-27 設定に画面の配色 `appearance` を足し、6. に `Appearance` を足した（CR-012・D-034）
 
 業務の言葉と区分値は business-data.md が正である。この文書は、それを実装で使う型・判定の決まり・不変条件に直したもの。業務の区分値を新しく作らない。実装の都合で要る区分値は 6. にまとめた（技術者が確認済み）。
 
@@ -140,13 +141,14 @@ interface Settings {
   eventDays: number;           // 1〜30、既定 7（F-32）
   layout: Layout;              // 6.。既定 'tabs'（AI案）
   language: Language;          // 6.。既定 'ja'
+  appearance: Appearance;      // 6.。既定 'system'（F-35。CR-012）
   onboarding: { completedAt?: string };
   lastLaunchedVersion?: string;  // F-36 (5) の判定に使う
 }
 ```
 
 - 自動起動（F-25）は設定ファイルに持たず、OS のログイン項目の状態を正とする（Electron の `app.getLoginItemSettings()`）。利用者が OS の設定で外しても食い違わないようにするため（AI案）
-- ダークモード（F-35）は OS に従うだけなので、設定に持たない
+- 画面の配色（F-35）は、既定の `system` では OS の外観に従う。`light`・`dark` は OS の外観に関わらずその配色にする。メインが Electron の `nativeTheme.themeSource` に入れ、画面の `prefers-color-scheme` はそれに従う（CR-012。2026-11-27 までは設定に持たず、OS に従うだけだった）
 
 ---
 
@@ -273,6 +275,7 @@ business-data.md に無い、実装の都合で要る区分値。業務の言葉
 | デスクトップ通知の失敗の理由 `DesktopNotificationFailure` | `outside_applications_folder`（Mac でアプリケーションフォルダの外から開いている）・`os_rejected`（OS が断った。通知の設定がオフなど） | N-09 の「考えられる理由」 | 画面の上部の表示、案内 (4) |
 | 画面の並べ方 `Layout` | `tabs`・`side_by_side` | F-33 | 設定 |
 | 表示言語 `Language` | `ja`・`en` | F-26 | 設定 |
+| 画面の配色 `Appearance` | `system`（OS に合わせる）・`light`・`dark` | F-35（CR-012 で追加） | 設定 |
 | 認証方式 `AuthMethod` | `pat` | ADR-004（2026-11-27 に `device_flow` を外した。CR-007） | 認証 |
 | 認証の状態 `AuthStatus` | `signed_out`・`keychain_notice`（版が変わり、キーチェーンの確認の前の案内を出している）・`signing_in`・`signed_in`・`auth_failed` | F-27・F-36 (5) | 画面の切り替え（component-frontend.md） |
 | IPC の失敗 `IpcErrorCode` | ipc-contract.md 4. | 画面から頼んだ処理の失敗 | IPC |

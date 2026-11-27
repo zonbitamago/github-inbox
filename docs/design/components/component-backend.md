@@ -10,6 +10,8 @@
 - 更新: 2026-11-27 ⑭ S4 で `notify/` の中身と、デスクトップ通知の文言・クリック・失敗・OS の通知の設定を開く先を書いた。Mac で OS の設定でオフにしても `failed` が出ないことを書いた（CR-011）
 - 更新: 2026-11-27 ⑭ S5 で、PR の一覧を取るときの細部（サインイン・サインアウトとの関係、失敗、続きのページ、ログ）を 5.3 に書いた
 - 更新: 2026-11-27 ⑭ S6a で、設定を変えたときの効き目（`app/settings-change.ts`）、自動起動、コピー、開発中のメニューを 8. に書いた
+- 更新: 2026-11-27 画面の配色の設定を、立ち上げ（5.1）と設定の変更（8.）に書いた（CR-012・D-034）
+- 更新: 2026-11-27 設定の知らない項目は、壊れたものとせず捨てて読むことにした（7.。CR-013・D-035）
 - 更新: 2026-11-27 ⑭ S6b で、新しい版を確かめる時（サインインした後と24時間ごと）を 5.1 に、試しのデスクトップ通知を 5.4 に、アプリケーションフォルダへの移動を 8.・11. に書いた
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
@@ -194,6 +196,7 @@ sequenceDiagram
 
   A->>A: 二重に立ち上げていないか（2つめは既存の窓を前に出して終わる）
   A->>S: settings.json を読む（無い・壊れていれば既定値）
+  A->>A: 画面の配色を nativeTheme.themeSource に入れる（窓を開く前。開いた直後に配色が変わらないように。CR-012）
   A->>W: 窓を開く
   W->>A: 状態を聞く（Mac でアプリケーションフォルダの外なら案内 (1)）
   alt トークンがある（前に認証した）
@@ -326,7 +329,7 @@ sequenceDiagram
 | | `events` | 出来事（domain-model.md 2. の `GitHubEvent`）。同じ id は1件で、先に受け取ったものを残す（I-1） |
 | | `githubNotifications` | GitHub の通知の問い合わせの記録: `etag`（前回の応答の ETag。CR-003）・`lastSuccessAt`（前回の成功の時刻） |
 | | `threads` | スレッドの id ごとの取り込みの記録: `reason`（最新の理由）・`updatedAt`（スレッドの更新時刻。30日動きが無いかの判定）・`expandedUntil`（分解した時刻）・`participating`（参加中。戻さない）・`consecutiveFailures`（続けて失敗した回数） |
-| `settings.json` | 設定（domain-model.md 2. の `Settings`） | 足りない項目は既定値で補う。知らない項目・範囲の外の値があれば壊れたものとして退避する。無いときは、変えるまでファイルを作らない |
+| `settings.json` | 設定（domain-model.md 2. の `Settings`） | 足りない項目は既定値で補う。知らない項目（新しい版で保存したファイルを古い版で読むとき）は捨てて読み、ログに数を書く（`store.unknown_keys_dropped`。CR-013）。範囲の外の値・知らない区分値・`schemaVersion` の違いがあれば壊れたものとして退避する。無いときは、変えるまでファイルを作らない |
 
 ---
 
@@ -341,7 +344,7 @@ sequenceDiagram
 | ブラウザで開く（F-12・F-17・F-36 (3)） | `shell.openExternal` | `core/url-guard` を通したものだけ（I-8） |
 | OS の通知の設定を開く（N-09・F-36 (4)） | `shell.openExternal` | 開く先はメインが OS ごとに決めた固定の先だけ（S-06）。Mac は `x-apple.systempreferences:com.apple.Notifications-Settings.extension`（macOS 13 以降のシステム設定の「通知」）、Windows は `ms-settings:notifications`（⑭ S4） |
 | コピー（F-34） | `clipboard.writeText` | URL の検査を通したものだけを、改行でつないで書く（⑭ S6a: `app/external.ts`。1件でも通らなければ全体を断り、0件なら書かない） |
-| 設定の変更（F-09・F-16・F-26・F-32・F-33） | `store/settings-store` | ⑭ S6a: `app/settings-change.ts`。保存して画面に知らせる。出来事の一覧の日数が変わったら、保存してある出来事から一覧を入れ替える（`events:reset`。取り直さない。domain-model.md 5.）。PR の一覧の期間が変わったら、取得中でも取り直す。デスクトップ通知・言語は使う側が毎回設定を読む |
+| 設定の変更（F-09・F-16・F-26・F-32・F-33・F-35） | `store/settings-store` | ⑭ S6a: `app/settings-change.ts`。保存して画面に知らせる。出来事の一覧の日数が変わったら、保存してある出来事から一覧を入れ替える（`events:reset`。取り直さない。domain-model.md 5.）。PR の一覧の期間が変わったら、取得中でも取り直す。デスクトップ通知・言語は使う側が毎回設定を読む。画面の配色が変わったら、`nativeTheme.themeSource` に入れ直す（CR-012。画面の `prefers-color-scheme` がそれに従う） |
 | スリープからの復帰 | `powerMonitor` | 6.1 |
 | メニュー | `Menu` | 既定のメニューの「再読み込み」（画面ごと読み直す）と「開発者ツール」は配布物では外す。キーボードの割り当ては component-frontend.md 5.（AI案）。⑭ S6a: 開発中も「再読み込み」（Cmd+R）は入れず、開発者ツールと強制の再読み込み（Shift+Cmd+R）だけを足す（Cmd+R を PR の一覧のリロードに使うため。`app/window.ts` の `applicationMenuTemplate`） |
 

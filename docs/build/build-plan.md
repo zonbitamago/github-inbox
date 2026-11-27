@@ -173,6 +173,8 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | [CR-009](change-requests/CR-009.md) | まとめた分解の問い合わせでは、スレッドごとに `$since` を分けられない（断片の中の変数のため）→ まとめた中で一番古い since を使い、スレッドごとの絞り込みは core に任せる | 技術者が決めた（2026-11-27。⑭ S3 の最初） |
 | [CR-010](change-requests/CR-010.md) | 分解するスレッドの選び方（domain-model.md 4.1）と取り込みの範囲（5.）を決める関数が core に無い → `core/select-threads.ts` と取り込みの数値の決まりを core に足す | 技術者が決めた（2026-11-27。⑭ S3 の最初） |
 | [CR-011](change-requests/CR-011.md) | Mac で OS の設定でデスクトップ通知をオフにしても、Electron は失敗を出さない（AC-38 を満たせない）→ 見分けられないことを受け入れ、試しのデスクトップ通知で利用者に確かめてもらう（S6） | 技術者・依頼者が決めた（2026-11-27。⑭ S4 の実機の確かめ。D-033） |
+| [CR-012](change-requests/CR-012.md) | 画面の配色は OS の外観に従うだけで、アプリの中で選べない → 設定に「画面の配色」（OS に合わせる・ライト・ダーク）を足し、メインが `nativeTheme.themeSource` で OS の外観を上書きする | 技術者・依頼者が決めた（2026-11-27。⑭ S6b を `main` に入れた後の依頼者の確かめ。D-034。S7 の前の PR で作る） |
+| [CR-013](change-requests/CR-013.md) | 古い版が、新しい版で増えた設定の項目を「壊れている」として設定を全部消す（使い始めた記録も消え、案内がまた出る）→ 知らない項目は捨てて読む。範囲の外の値は今までどおり退避する | 技術者・依頼者が決めた（2026-11-27。CR-012 の実機の確かめ。D-035。CR-012 と同じ PR で作る） |
 
 ## 8. ⑬ で AI が決めた、設計に無かった細部（⑮ のレビューの材料）
 
@@ -245,6 +247,9 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | S6b `features/status/` | 試しのデスクトップ通知の部品（`DesktopNotificationCheck`）・アプリケーションフォルダへ移すボタン・OS の通知の設定を開くボタンを `status` に置き、案内（Page）と設定の画面（Page）で組む。直し方は帯と同じ分け方（Mac でアプリケーションフォルダの外なら移す、それ以外は OS の通知の設定を開く）。設定の「デスクトップ通知が出ないとき」は、案内の手順4と同じ中身（OS の通知の設定を開くボタンは、失敗・「表示されなかった」のときに出す） | Feature どうしは読み合えないため（component-frontend.md 7.）。帯と試しで直し方を揃えるため |
 | S6b `ui/Banner.tsx` | 帯の色に `primary`（地 `color-badge-primary-bg`・文字 `color-badge-primary-fg`）を足した。新しい版の帯で使う | design-system.md 6. の「新しい版」 |
 | S6b `test/fixtures/github/rest-releases-latest-none.json` | 配布用のリポジトリの `releases/latest`（版がまだ無い 404）を記録した。`documentation_url` は `example.com` に置き換えた。版のある 200 の応答は、S7 で最初の版を出したら記録する（それまではテストの中で作る。技術者が決めた） | 記録した応答の検査（`test/contract/fixtures-anonymized.test.ts`）が、GitHub と example.com の外の URL を断るため |
+| CR-012 `features/settings/AppearanceSection.tsx` | 設定の画面の「配色」の節を、言語の節の前に置く。選ぶ部品は言語と同じ `ui/Select`。文言は「画面の配色」で、選べるのは「OS に合わせる」「ライト」「ダーク」（英語: Appearance・Color scheme・Match system・Light・Dark） | 見た目に関わる設定を並べるため。言語と同じ形にすると部品を足さずに済む |
+| CR-012 `src/main/index.ts` | 設定を読んだらすぐ、窓を開く前に `nativeTheme.themeSource` に入れる。設定が変わったときは、変わったときだけ入れ直す（`app/settings-change.ts`） | 開いた直後に配色が入れ替わらないようにするため |
+| CR-013 `src/main/store/settings-store.ts` | 知らない項目を捨てるのは、最上位・`desktopNotification`・`desktopNotification.byType`・`onboarding` の中。捨てたときは `store.unknown_keys_dropped`（warn）に数だけを書く。`onboarding` が無いときも既定値で補う | `Settings` の入れ子の全部。項目の名前と値はログに出さない（security-rules.md S-09 の、書くものを絞る考え方に合わせる） |
 
 ## 9. ⑮ への申し送り
 
