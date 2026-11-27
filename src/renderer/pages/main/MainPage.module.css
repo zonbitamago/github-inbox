@@ -3,3 +3,11 @@
   flex-direction: column;
   height: 100vh;
 }
+
+/* 帯の「サインインし直す」で出す PAT の貼り付け（CR-008） */
+.signIn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
