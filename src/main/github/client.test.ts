@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryLogger } from '../../../test/support/memory-logger'
-import { createGitHubClient, type GitHubClientDeps } from './client'
+import {
+  apiPathOf,
+  createGitHubClient,
+  githubTimestamp,
+  nextPagePath,
+  type GitHubClientDeps,
+} from './client'
 import { RateBudget } from './rate-budget'
 
 const NOW = new Date('2026-01-01T00:00:00Z')
@@ -220,5 +226,116 @@ describe('ログ（security-rules.md S-09）', () => {
         fields: { endpoint: 'user', failure: 'offline' },
       },
     ])
+  })
+})
+
+describe('GraphQL（github-api.md 1.・3.）', () => {
+  const query = 'query Viewer { viewer { login } }'
+
+  it('POST /graphql に、文と変数を本文で送る。利用制限は graphql の枠で覚える', async () => {
+    const { client, fetchMock, rateBudget } = setup(() =>
+      json(
+        200,
+        { data: { viewer: { login: 'alice' } } },
+        {
+          'x-ratelimit-resource': 'graphql',
+          'x-ratelimit-remaining': '4900',
+          'x-ratelimit-reset': '1767229200',
+        },
+      ),
+    )
+    await expect(
+      client.graphql({ endpoint: 'graphql.test', query, variables: { n: 1 } }),
+    ).resolves.toMatchObject({ kind: 'ok', body: { data: { viewer: { login: 'alice' } } } })
+
+    const [url, init] = fetchMock.mock.calls[0] ?? []
+    expect(url).toEqual(new URL('https://api.github.com/graphql'))
+    expect(init?.method).toBe('POST')
+    expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${TOKEN}`)
+    expect(typeof init?.body === 'string' ? JSON.parse(init.body) : undefined).toEqual({
+      query,
+      variables: { n: 1 },
+    })
+    expect(rateBudget.remaining('graphql')?.remaining).toBe(4900)
+    expect(rateBudget.remaining('core')).toBeUndefined()
+  })
+
+  it.each([
+    ['mutation', 'mutation { markNotificationsAsRead }'],
+    ['名前の付いた mutation', '  mutation Mark($id: ID!) { x }'],
+    ['subscription', 'subscription { x }'],
+    ['query の省略形', '{ viewer { login } }'],
+  ])('%s は問い合わせずに断る（N-06）', async (_name, text) => {
+    const { client, fetchMock } = setup(() => json(200, {}))
+    await expect(
+      client.graphql({ endpoint: 'graphql.test', query: text, variables: {} }),
+    ).rejects.toThrow('github_graphql_query_only')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('GraphQL の枠が止まっている間は、問い合わせずに利用制限とする', async () => {
+    const { client, fetchMock, rateBudget } = setup(() => json(200, {}))
+    rateBudget.observe(
+      new Headers({
+        'x-ratelimit-resource': 'graphql',
+        'x-ratelimit-remaining': '0',
+        'x-ratelimit-reset': '1767229200',
+      }),
+      NOW,
+    )
+    await expect(
+      client.graphql({ endpoint: 'graphql.test', query, variables: {} }),
+    ).resolves.toEqual({
+      kind: 'failed',
+      failure: { kind: 'rate_limited', retryAt: new Date(1767229200 * 1000) },
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('次のページと API の URL（github-api.md 2.・4.）', () => {
+  it('Link の rel="next" をパスにする', () => {
+    const headers = new Headers({
+      link: '<https://api.github.com/notifications?all=true&per_page=50&page=2>; rel="next", <https://api.github.com/notifications?all=true&per_page=50&page=7>; rel="last"',
+    })
+    expect(nextPagePath(headers)).toBe('/notifications?all=true&per_page=50&page=2')
+  })
+
+  it.each([
+    ['Link が無い', {}],
+    [
+      'next が無い（最後のページ）',
+      { link: '<https://api.github.com/notifications?page=1>; rel="first"' },
+    ],
+    [
+      'next が api.github.com の外',
+      { link: '<https://example.com/notifications?page=2>; rel="next"' },
+    ],
+  ])('%s → 次は無い', (_name, headers: Record<string, string>) => {
+    expect(nextPagePath(new Headers(headers))).toBeUndefined()
+  })
+
+  it.each([
+    [
+      'api.github.com の URL',
+      'https://api.github.com/repos/o/r/issues/comments/1',
+      '/repos/o/r/issues/comments/1',
+    ],
+    ['問い合わせの値も残す', 'https://api.github.com/x?a=1', '/x?a=1'],
+    ['github.com（ページ）', 'https://github.com/o/r/pull/1', undefined],
+    ['http', 'http://api.github.com/x', undefined],
+    ['URL でない', 'not a url', undefined],
+  ])('%s', (_name, value, expected) => {
+    expect(apiPathOf(value)).toBe(expected)
+  })
+})
+
+describe('GitHub に渡す時刻の形（github-api.md 2.・3.）', () => {
+  it.each([
+    ['ミリ秒を切り捨てる', '2026-01-30T23:55:00.999Z', '2026-01-30T23:55:00Z'],
+    ['ミリ秒が0', '2026-01-30T23:55:00.000Z', '2026-01-30T23:55:00Z'],
+    ['もともと秒まで', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'],
+  ])('%s', (_name, iso, expected) => {
+    expect(githubTimestamp(iso)).toBe(expected)
   })
 })

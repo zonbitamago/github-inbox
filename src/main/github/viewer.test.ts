@@ -1,22 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import recordedTeams from '../../../test/fixtures/github/user-teams.json'
 import recordedUser from '../../../test/fixtures/github/user.json'
-import type { GitHubClient, GitHubResult } from './client'
-import { fetchViewer, parseScopes } from './viewer'
+import {
+  createFakeGitHubClient,
+  failedResult,
+  notModifiedResult,
+  okResult,
+} from '../../../test/support/fake-github-client'
+import type { GitHubResult } from './client'
+import { fetchTeams, fetchViewer, parseScopes } from './viewer'
 
-function clientReturning(result: GitHubResult): GitHubClient & { paths: string[] } {
-  const paths: string[] = []
-  return {
-    paths,
-    get: (request) => {
-      paths.push(request.path)
-      return Promise.resolve(result)
-    },
-  }
-}
-
-function okResult(body: unknown, headers: Record<string, string>): GitHubResult {
-  return { kind: 'ok', status: 200, headers: new Headers(headers), body }
-}
+const clientReturning = (result: GitHubResult) => createFakeGitHubClient({ get: () => result })
 
 describe('スコープの読み方（auth-flow.md 3.）', () => {
   it.each([
@@ -43,7 +37,7 @@ describe('利用者を取る（github-api.md 6. の GET /user）', () => {
       login: 'alice',
       scopes: ['gist', 'read:org', 'repo', 'workflow'],
     })
-    expect(client.paths).toEqual(['/user'])
+    expect(client.gets.map((request) => request.path)).toEqual(['/user'])
   })
 
   it('ユーザー名の無い応答（書き換えた応答）は、想定外の応答とする', async () => {
@@ -70,4 +64,31 @@ describe('利用者を取る（github-api.md 6. の GET /user）', () => {
       failure: { kind: 'auth_failed' },
     })
   })
+})
+
+describe('所属チーム（github-api.md 6.、M-7）', () => {
+  it('記録した応答（9チーム）を「組織/チーム」にする', async () => {
+    const client = clientReturning(okResult(recordedTeams.response.body))
+    const result = await fetchTeams(client)
+    expect(client.gets).toEqual([{ endpoint: 'user_teams', path: '/user/teams?per_page=100' }])
+    expect(result).toEqual({
+      kind: 'ok',
+      teams: recordedTeams.response.body.map((team) => `${team.organization.login}/${team.slug}`),
+    })
+    expect(result.kind === 'ok' ? result.teams : []).toContain('example-org/reviewers')
+  })
+
+  it.each([
+    ['問い合わせの失敗', failedResult({ kind: 'offline' }), { kind: 'offline' }],
+    ['形が合わない', okResult([{ name: 'x' }]), { kind: 'github_error', status: 200 }],
+    ['304', notModifiedResult(), { kind: 'github_error', status: 304 }],
+  ])(
+    '%s → 失敗として返す（所属チームを読めないときの判定に代える）',
+    async (_name, result, failure) => {
+      await expect(fetchTeams(clientReturning(result))).resolves.toEqual({
+        kind: 'failed',
+        failure,
+      })
+    },
+  )
 })
