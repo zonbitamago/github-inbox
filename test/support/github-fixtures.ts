@@ -9,6 +9,9 @@ import workflowRuns from '../fixtures/github/rest-workflow-runs.json'
 import searchA from '../fixtures/github/graphql-search-a-involves.json'
 import searchB from '../fixtures/github/graphql-search-b-review-requested.json'
 import searchC from '../fixtures/github/graphql-search-c-own-open.json'
+import notificationsAll from '../fixtures/github/notifications-all.json'
+import notificationsCi from '../fixtures/github/notifications-repo-ci-activity.json'
+import type { ListedThread } from '../../src/main/core/select-threads'
 import type {
   GhIssueNode,
   GhLatestComment,
@@ -74,3 +77,90 @@ export const recordedWorkflowRuns = (): GhWorkflowRun[] =>
 
 /** ワークフロー実行の記録の since（日時は 2026-01-01 起点にずらしてある） */
 export const RECORDED_CI_SINCE = '2026-01-01T00:00:00Z'
+
+/** GitHub の通知の1件のうち、分解するかを決める材料（github/notifications.ts が zod で取り出す項目と同じ） */
+interface RecordedThread {
+  id: string
+  reason: string
+  updated_at: string
+  subject: { type: string; url: string | null }
+}
+
+const toListedThread = (thread: RecordedThread): ListedThread => ({
+  id: thread.id,
+  reason: thread.reason,
+  updatedAt: thread.updated_at,
+  subjectType: thread.subject.type,
+  subjectUrl: thread.subject.url,
+})
+
+/** GET /notifications?all=true の最初のページ（50件。PR 47・issue 3） */
+export const recordedGitHubNotificationThreads = (): ListedThread[] =>
+  (notificationsAll.response.body as RecordedThread[]).map(toListedThread)
+
+/** 本リポジトリ（alice/tools）の GitHub の通知。ci_activity（CheckSuite、subject.url は空）1件と state_change 3件 */
+export const recordedCiGitHubNotificationThreads = (): ListedThread[] =>
+  (notificationsCi.response.body as RecordedThread[]).map(toListedThread)
+
+/** 記録した分解の応答の PR・issue を、リポジトリと番号で引く（own と others の2つの記録から） */
+function recordedSubject(
+  owner: unknown,
+  name: unknown,
+  number: unknown,
+): { pullRequest: unknown } | { issue: unknown } | undefined {
+  for (const recorded of [expandOwn, expandOthers]) {
+    const variables: Record<string, unknown> = recorded.request.body.variables
+    const data: Record<string, unknown> = recorded.response.body.data
+    for (let index = 0; `o${index}` in variables; index += 1) {
+      if (
+        variables[`o${index}`] === owner &&
+        variables[`r${index}`] === name &&
+        variables[`n${index}`] === number
+      ) {
+        return structuredClone(data[`t${index}`]) as { pullRequest: unknown } | { issue: unknown }
+      }
+    }
+  }
+  return undefined
+}
+
+/**
+ * 別名でまとめた分解の問い合わせ（github-api.md 3.）への応答を、記録した応答の PR・issue を組み直して作る（書き換えた応答）。
+ * 記録に無い PR・issue は null（GitHub の「見つからない」と同じ形）にする
+ */
+export function recordedExpandResponse(variables: Record<string, unknown>): {
+  data: Record<string, unknown>
+} {
+  const data: Record<string, unknown> = {
+    rateLimit: expandOwn.response.body.data.rateLimit,
+  }
+  for (let index = 0; `o${index}` in variables; index += 1) {
+    data[`t${index}`] =
+      recordedSubject(variables[`o${index}`], variables[`r${index}`], variables[`n${index}`]) ??
+      null
+  }
+  return { data }
+}
+
+/** 記録した分解の応答に対応する、GitHub の通知のスレッド（notifications-all.json の50件のうち6件） */
+export const RECORDED_EXPANDED_THREAD_IDS = [
+  '49230809513',
+  '62719202869',
+  '31545837801',
+  '37955540409',
+  '63163524336',
+  '19123953720',
+] as const
+
+/** GET /notifications の記録した応答のうち、分解の応答を記録してあるスレッドだけ（書き換えた応答） */
+export function recordedExpandedGitHubNotifications(): unknown[] {
+  const wanted = new Set<string>(RECORDED_EXPANDED_THREAD_IDS)
+  return structuredClone(notificationsAll.response.body).filter((thread) => wanted.has(thread.id))
+}
+
+/** 記録した GET /notifications の応答のヘッダー（Link を外した。書き換えた応答） */
+export function recordedGitHubNotificationHeaders(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(notificationsAll.response.headers).filter(([name]) => name !== 'link'),
+  )
+}

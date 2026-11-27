@@ -27,6 +27,8 @@
 | `notifications-repo-ci-activity.json` | `GET /repos/{owner}/{repo}/notifications?all=true`（本リポジトリ。架空の名前では `alice/tools`）。`ci_activity` のスレッド1件（種類 `CheckSuite`、`subject.url` は空）と、PR の状態の変化 | CI（S3） |
 | `rest-workflow-runs.json` | `GET /repos/{owner}/{repo}/actions/runs?actor=…&status=completed&created=>=…`（github-api.md 4.）。11件。利用者の push・PR の実行、やり直し（`run_attempt` 2）、`actor` で絞っても返ってくる bot の実行 | CI の分解（`expand-workflow-runs`） |
 
+- S3 の取り込みのテスト（`src/main/ingest/`・`test/integration/ingest.test.ts`）は、`notifications-all.json` のうち分解の応答を記録してある6スレッドだけを取り出し、分解の問い合わせには、記録した PR・issue を別名ごとに組み直して返す（`test/support/github-fixtures.ts` の `recordedExpandResponse`。書き換えた応答）
+
 ## まだ無い場面（起きたときに記録する。それまではテストの中で書き換えて使い、テストに「書き換えた応答」と書く。DR-16）
 
 | 場面 | 状態 |

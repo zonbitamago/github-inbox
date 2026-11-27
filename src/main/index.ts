@@ -1,8 +1,8 @@
-// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証まで。
-// 取り込み（S3）・デスクトップ通知（S4）・PR の一覧（S5）は、各スライスで足していく。
+// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み。
+// デスクトップ通知（S4）・PR の一覧（S5）は、各スライスで足していく。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, ipcMain, safeStorage, type BrowserWindow } from 'electron'
+import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
 import { AppStateHolder } from './app/app-state'
 import { createGitHubOpener } from './app/external'
@@ -12,6 +12,8 @@ import { TokenStore } from './auth/token-store'
 import { createGitHubClient } from './github/client'
 import { RateBudget } from './github/rate-budget'
 import { fetchViewer } from './github/viewer'
+import { IngestService } from './ingest/ingest-service'
+import type { Timer } from './ingest/scheduler'
 import { createPusher, createSenderCheck, registerInvokeHandlers } from './ipc/handlers'
 import { createLogger } from './log/logger'
 import { EventsStore } from './store/events-store'
@@ -71,6 +73,30 @@ async function start(): Promise<void> {
       now,
     })
 
+  const timer: Timer = {
+    schedule: (callback, delayMs) => {
+      const handle = setTimeout(callback, delayMs)
+      return () => clearTimeout(handle)
+    },
+  }
+
+  // 取り込み（component-backend.md 5.2）。トークンは問い合わせのたびに認証から受け取る（I-7）
+  const ingest = new IngestService({
+    client: githubClientFor(() => auth.token()),
+    store: eventsStore,
+    storeLoaded: eventsLoaded,
+    eventDays: () => settingsStore.current().eventDays,
+    rateBudget,
+    timer,
+    now,
+    logger,
+    publish: (view) => state.update({ ingest: view }),
+    added: (events) => pusher.send('events:added', events),
+    reset: (events) => pusher.send('events:reset', events),
+    // 401 を受けたら、認証が切れた状態にする（auth-flow.md 5.）
+    authFailed: () => auth.expire(),
+  })
+
   // 認証（auth-flow.md）
   const tokenStore = new TokenStore(
     join(userData, 'token.bin'),
@@ -99,12 +125,9 @@ async function start(): Promise<void> {
       pusher.send('events:reset', [])
     },
     publish: (view) => state.update({ auth: view.auth, ingest: view.ingest }),
-    timer: {
-      schedule: (callback, delayMs) => {
-        const timer = setTimeout(callback, delayMs)
-        return () => clearTimeout(timer)
-      },
-    },
+    onSignedIn: (login) => ingest.start(login),
+    onSignedOut: () => ingest.stop(),
+    timer,
     now,
     logger,
   })
@@ -155,8 +178,10 @@ async function start(): Promise<void> {
     mainWindow = null
   })
 
-  // トークンを読み出して GET /user で確かめる（版が変わったときは、画面の「続ける」を待つ）
+  // トークンを読み出して GET /user で確かめる（版が変わったときは、画面の「続ける」を待つ）。確かめられたら取り込みを始める
   auth.resume()
+  // スリープから戻ったら、すぐ1回問い合わせる（component-backend.md 6.1）
+  powerMonitor.on('resume', () => ingest.wake())
 
   // 24時間ごとに、発生から30日を過ぎた出来事を消す（I-4、component-backend.md 7.）
   setInterval(() => {

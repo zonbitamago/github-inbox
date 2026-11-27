@@ -1,6 +1,7 @@
 // 認証の流れ（auth-flow.md、component-backend.md 5.1）。
 // 立ち上げ時のトークンの読み出し・版が変わったときのキーチェーンの案内・PAT の受け付け・サインアウトを受け持つ。
 // 状態（AppState の auth と ingest）は publish で組み立てに渡す。auth/ を読めるのは組み立てだけ（component-backend.md 3.1）。
+// GET /user で確かめられたら onSignedIn で取り込みに引き継ぎ、そこから先の受け取りの状態は取り込みが知らせる（⑭ S3）。
 // トークンは token() で github/ の client にだけ渡す（I-7）。
 import type { AppState, IpcErrorCode, Result } from '../../shared/ipc-contract'
 import { POLL_INTERVAL_MS } from '../core/constants'
@@ -39,6 +40,10 @@ export interface AuthServiceDeps {
   /** 出来事と取り込みの記録を消し、画面に知らせる（auth-flow.md 6.） */
   clearEvents: () => Promise<void>
   publish: (view: AuthView) => void
+  /** トークンを確かめられた。取り込みを始める（取り戻しから。component-backend.md 5.1、auth-flow.md 5.） */
+  onSignedIn: (login: string) => void
+  /** サインアウト・サインインし直しの前に、今の取り込みを止める */
+  onSignedOut: () => void
   timer: Timer
   now: () => Date
   logger: Logger
@@ -118,7 +123,9 @@ export class AuthService {
     this.login = judgement.login
     // 同じ版で次に立ち上げたとき、キーチェーンの案内を出さないため（auth-flow.md 4.）
     await this.rememberVersion()
-    this.publish(this.signedIn({ state: 'ok' }))
+    this.publish(this.signedIn({ state: 'syncing' }))
+    // 認証が切れた後にサインインし直したときも、取り戻しから再開する（auth-flow.md 5.）
+    this.deps.onSignedIn(judgement.login)
     return okResult({ login: judgement.login })
   }
 
@@ -131,6 +138,13 @@ export class AuthService {
     this.login = undefined
     this.publish(SIGNED_OUT)
     return okResult(undefined)
+  }
+
+  /** 取り込みで 401 を受けた（auth-flow.md 5.）。認証し直すまで止める。保存済みの出来事は残す */
+  expire(): void {
+    if (this.view.auth.status !== 'signed_in') return
+    this.restart()
+    this.publish({ auth: this.authOf('auth_failed'), ingest: { state: 'auth_failed' } })
   }
 
   private async unlock(generation: number): Promise<void> {
@@ -159,8 +173,9 @@ export class AuthService {
     if (generation !== this.generation) return
     if (result.kind === 'ok') {
       this.login = result.login
-      // 取り込みの状態は、取り込み（S3）を作るまで、確かめられたら ok とする
-      this.publish(this.signedIn({ state: 'ok' }))
+      // ここから先の受け取りの状態は、取り込みが知らせる（取り戻しの間は syncing。Q-03）
+      this.publish(this.signedIn({ state: 'syncing' }))
+      this.deps.onSignedIn(result.login)
       return
     }
     const failed = result.failure
@@ -194,12 +209,13 @@ export class AuthService {
     }, delayMs)
   }
 
-  /** 今までの流れ（読み出し・やり直し）を止める */
+  /** 今までの流れ（読み出し・やり直し・取り込み）を止める */
   private restart(): void {
     this.generation += 1
     this.pendingUnlock = false
     this.cancelRetry?.()
     this.cancelRetry = undefined
+    this.deps.onSignedOut()
   }
 
   private async rememberVersion(): Promise<void> {

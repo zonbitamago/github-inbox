@@ -32,3 +32,18 @@ export const MAX_CONCURRENT_GITHUB_REQUESTS = 4
 
 /** 平常の問い合わせの間隔。立ち上げ時の GET /user がつながらなかったときも、この間隔でやり直す（component-backend.md 5.1・6.1、N-01） */
 export const POLL_INTERVAL_MS = 60 * 1000
+
+/** 利用制限の残りがこれを切ったら（REST・GraphQL のどちらか）、問い合わせの間隔を延ばす（component-backend.md 6.1、Q-04） */
+export const RATE_LIMIT_LOW_REMAINING = 500
+
+/** 利用制限の残りが少ないときの間隔。処理の30秒を足しても5分（N-01）に収まる（component-backend.md 6.1。AI案。DR-10） */
+export const SLOW_POLL_INTERVAL_MS = 4 * 60 * 1000
+
+/** 分解の問い合わせ1回にまとめるスレッドの数（github-api.md 3.。AI案） */
+export const EXPAND_BATCH_SIZE = 20
+
+/** 同じスレッドの分解がこの回数続けて失敗したら、ログに残して取り込みの記録を進める（component-backend.md 5.2。AI案） */
+export const THREAD_FAILURE_LIMIT = 3
+
+/** つながらない・GitHub の障害がこの回数続いたら、受け取りの状態を変えて画面に出す（component-backend.md 6.3、Q-06） */
+export const FAILURES_BEFORE_SHOWN = 2

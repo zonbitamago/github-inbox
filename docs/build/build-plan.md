@@ -85,7 +85,7 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | S1 骨格 | 保存（json-file・events-store・settings-store、30日で消す、壊れたときの退避）、ログ、窓1つ・閉じたら終了・二重に立ち上げない、preload、IPC の受け口（`app:getState` など）、画面の殻（App の切り替え・main-store・一覧の殻）。保存済みの出来事を先に出す（component-backend.md 5.1） | `src/main/{store,log,app/window.ts,ipc}`、`src/preload`、`src/renderer/{App.tsx,main-store,pages/main,ui}` | F-06・F-24・N-10、I-1・I-4・I-5 | 単体（保存・30日）、結合M（壊れたファイル）、結合R（殻） | 立ち上がって、手で置いた架空の `events.json` が一覧に出る（⑭ S1 で確かめた: サインインしていない間は使い始めの案内が出るため、出来事の一覧は画面の結合のテストと `events:list` の応答で確かめた。2つめの立ち上げはすぐ終わり、窓を閉じたら終了した） |
 | S2 認証 | PAT（デバイスフローは CR-007 でやめた）・トークンの保存（safeStorage の非同期版）・版が変わったときのキーチェーンの案内・`GET /user`・サインアウト。使い始めの案内の手順2と手順5（終わり。自動起動の切り替えは S6）。PAT の作成ページを開く `shell:openGitHub`。github/client と rate-budget。GitHub に書き込む呼び出しが無いことの検査（S-07）（手順5と `shell:openGitHub` は、S3 以降でメインの画面に進むため・作成ページを開くために S2 に入れた。2026-11-27 技術者が決めた） | `src/main/{auth,github/client.ts,github/rate-budget.ts,github/viewer.ts,app/external.ts}`、`src/renderer/{pages/keychain-notice,pages/onboarding,features/auth,features/onboarding,ui,main-store}`、`test/config`（S-07） | F-27・F-28・F-36 (2)(5)・N-05 | 単体（スコープの確認・トークンの形）、結合M（PAT の確かめの各応答）、結合R | 依頼者のアカウントでサインインする。前提: 5. の 0-5（2026-11-27 済み）（⑭ S2 で確かめた（2026-11-27。開発用の立ち上げ）: 作成ページが repo・notifications・説明を入れた形で開き、依頼者が作った classic PAT でサインインでき（GET /user が 200）、手順5からメインの画面に進んだ。立ち上げ直すと、キーチェーンの案内なしで読み出して GET /user で確かめ、メインの画面が出た。キーチェーンの案内は配布物が要るため S7 で確かめる） |
-| S3 出来事 | GitHub の通知の問い合わせ（If-Modified-Since・X-Poll-Interval）、GraphQL での分解、CI の結果、取り戻し、受け取りの状態、出来事の一覧・絞り込み・状態の帯 | `src/main/{ingest,github/notifications.ts,github/timeline.ts,github/workflow-runs.ts}`、`src/renderer/features/{event-list,status}` | F-01〜F-06・F-11〜F-13・N-01・N-04・N-07・N-08 | 結合M（模擬の GitHub。失敗・取り戻し・回数）、結合R | 依頼者の実データで種類ごとに出るか（R-04）。CI の結果は 0-7 の後。知らせの帯の「サインインし直す」で `auth.status` を `signing_in` にするチャンネルが契約に無いため、S3 で変更要求を起票する（2026-11-27 技術者が決めた） |
+| S3 出来事 | GitHub の通知の問い合わせ（`If-None-Match` の ETag（CR-003）・X-Poll-Interval）、GraphQL での分解、CI の結果、取り戻し、受け取りの状態、出来事の一覧・絞り込み・状態の帯。PR を2つに分ける（2026-11-27 技術者が決めた）: **S3a** はメインの取り込み（所属チームの `GET /user/teams` を含む）、**S3b** は画面（出来事の一覧の絞り込み・開く・抜粋・状態の帯） | S3a: `src/main/{ingest,github/client.ts,github/notifications.ts,github/timeline.ts,github/workflow-runs.ts,github/viewer.ts,auth/auth-service.ts,core/select-threads.ts,core/constants.ts,index.ts}`（core は CR-010）。S3b: `src/renderer/{features/event-list,features/status,pages/main,i18n}` | F-01〜F-06・F-11〜F-13・N-01・N-04・N-07・N-08 | 結合M（模擬の GitHub。失敗・取り戻し・回数）、結合R | 依頼者の実データで種類ごとに出るか（R-04）。CI の結果は 0-7 の後。知らせの帯の「サインインし直す」は、チャンネルを足さず画面の中だけの状態にする（CR-008。2026-11-27 技術者が決めた）（⑭ S3a で確かめた（2026-11-27。開発用の立ち上げ、依頼者のアカウント、出来事の一覧の日数7日）: 取り戻しで GitHub の通知のスレッド64件のうち61件を分解し、出来事359件を保存した（約11秒。やり直すスレッド0件）。7種類すべてが出た（参加中 53・レビュー依頼 22・メンション 140・コメント 48・レビュー 25・アサイン 1・CI の結果 70）。チーム宛てのレビュー依頼は0件（データに無かった）。その後の定期の取り込みは60秒ごとで、ETag で 304 が続いた。依頼者が一覧を見て、知っている出来事が出ていることを確かめた。参加中の取りこぼし（R-04）は ⑮ で確かめる） |
 | S4 デスクトップ通知 | Notification、クリックで前面と出来事の強調（`ui:focusEvent`）、失敗の判定と帯 | `src/main/notify`、`src/renderer/features/event-list`（強調だけ） | F-07・F-08・N-09 | 結合M（出す・出さない） | アプリケーションフォルダに置いたビルドで、出る・クリックで前面に出る |
 | S5 PR の一覧 | 検索3本・自分待ちの理由・リロード・期間・絞り込み | `src/main/{pr-list,github/pr-search.ts}`、`src/renderer/features/pr-list` | F-14〜F-18・F-20 | 結合M、結合R | 依頼者の PC で5秒以内か（Q-02。本番の測定は ⑮） |
 | S6 設定・案内・OS | 設定の画面、使い始めの案内（手順1・3・4と、手順5の自動起動の切り替え。手順2と手順5の終わりは S2）、自動起動、アプリケーションフォルダへの移動、新しい版の確認、言語、並べ方、リンクのコピー、ライト・ダーク | `src/main/app`、`src/main/github/releases.ts`、`src/renderer/{pages/settings,pages/onboarding,features/settings,features/onboarding,i18n}` | F-09・F-16・F-23・F-25・F-26・F-31・F-33〜F-36 | 結合R、結合M（新しい版の判定） | 手動のチェックリスト（R-06・R-07・R-15） |
@@ -162,13 +162,16 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 
 | # | 内容 | 状態 |
 | --- | --- | --- |
-| [CR-001](change-requests/CR-001.md) | issue の分解の問い合わせに、レビューとレビュー依頼の型を入れられない（入れると問い合わせ全体が失敗する） | 文書と記録の道具は直した。技術者の確認待ち |
+| [CR-001](change-requests/CR-001.md) | issue の分解の問い合わせに、レビューとレビュー依頼の型を入れられない（入れると問い合わせ全体が失敗する） | 技術者が確認した（2026-11-27。⑭ S3 の最初） |
 | [CR-002](change-requests/CR-002.md) | レビューのスレッドへの返信が timelineItems に出てこない → `reviews(last: 50)` で取る | 技術者が直し方を決めた（2026-11-26） |
-| [CR-003](change-requests/CR-003.md) | GitHub の通知は `If-Modified-Since` では 304 にならない → `ETag`（`If-None-Match`）にする | 文書と記録の道具は直した。技術者の確認待ち |
+| [CR-003](change-requests/CR-003.md) | GitHub の通知は `If-Modified-Since` では 304 にならない → `ETag`（`If-None-Match`）にする | 技術者が確認した（2026-11-27。⑭ S3 の最初） |
 | [CR-004](change-requests/CR-004.md) | M-9 の出来事の中身を取る問い合わせが無い → `latest_comment_url` を読む | 技術者が決めた（2026-11-26） |
 | [CR-005](change-requests/CR-005.md) | 取り消されたレビュー（DISMISSED）をレビューの結果に写せない → 「コメントのみ」 | 技術者が決めた（2026-11-26。D-029） |
 | [CR-006](change-requests/CR-006.md) | OAuth App の名前を「github-inbox」にできない（GitHub が「GitHub」で始まる名前を受け付けない）→ OAuth App の名前だけ「Inbox for GitHub」 | 技術者・依頼者が決めた（2026-11-27。⑭ の前の 0-4 で見つけた。D-030）。その後 CR-007 で OAuth App を使わなくなった |
 | [CR-007](change-requests/CR-007.md) | OAuth App（デバイスフロー）では会社の非公開リポジトリを読めない（Organization の OAuth App のアクセス制限）→ classic PAT だけにする | 技術者・依頼者が決めた（2026-11-27。⑭ の前の 0-5 で見つけた。D-031） |
+| [CR-008](change-requests/CR-008.md) | 知らせの帯の「サインインし直す」で、認証し直す画面に進むチャンネルが契約に無い → チャンネルを足さず、画面の中だけの状態にする | 技術者が決めた（2026-11-27。⑭ S3 の最初。作るのは S3b） |
+| [CR-009](change-requests/CR-009.md) | まとめた分解の問い合わせでは、スレッドごとに `$since` を分けられない（断片の中の変数のため）→ まとめた中で一番古い since を使い、スレッドごとの絞り込みは core に任せる | 技術者が決めた（2026-11-27。⑭ S3 の最初） |
+| [CR-010](change-requests/CR-010.md) | 分解するスレッドの選び方（domain-model.md 4.1）と取り込みの範囲（5.）を決める関数が core に無い → `core/select-threads.ts` と取り込みの数値の決まりを core に足す | 技術者が決めた（2026-11-27。⑭ S3 の最初） |
 
 ## 8. ⑬ で AI が決めた、設計に無かった細部（⑮ のレビューの材料）
 
@@ -199,6 +202,14 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | 検査 `.dependency-cruiser.cjs` | どのフォルダがどこを読んでよいかの表（component-backend.md 3.1、component-frontend.md 7.）。設計書にはフォルダの一覧と役割しか無かったため、4. の役割と AGENTS.md の「特に守る範囲」から作った。`auth/` を読めるのは組み立て（`index.ts`）だけ、`github/` は `auth/`・`store/`・`ingest/` を読まない、など。テスト（`*.test.ts`）は対象の外。npm の部品・Node.js は ESLint に任せる | ⑮ の統合で、表と実際のコードの図（dependency-cruiser で書き出せる）を見比べる |
 | 検査 `test/config/structure-rules.test.ts` | 構造の検査が効いているかを、架空のフォルダで確かめるテストを置いた | 作るときに1度起きた: 同じフォルダの中を許す決まりが `features/` の下までまとめて許し、Feature どうしの import が通っていた |
 | 検査 `events.json` | GitHub の通知の問い合わせの記録の項目を `notifications` から `githubNotifications` に変えた | 決まり（coding-standards.md 3.）に合わせた。まだ配っていないので、前の形からの移し替えは要らない |
+| S3a `ingest/ingest-service.ts` | `events.json` の「前回の成功の時刻」は、200 を受けて保存したときだけ進める（304 では書かない。component-backend.md 7.）。そのため、変わらない間は GitHub の通知の `since` も変わらず、ETag の 304 が効く | 毎回 `since` が変わると、問い合わせの URL が変わり、ETag が合わなくなるおそれがある。実際に 304 が続くかは、依頼者の実データで確かめる（S3a の手動の確かめ） |
+| S3a `ingest/ingest-service.ts` | 失敗の分け方: GraphQL の別名だけの失敗と、そのリポジトリだけの 403・404 は「1つのスレッドの失敗」（続けて3回で記録を進める）。つながらない・401・利用制限・GitHub の障害は、その回の全体をやり直す。やり直すスレッドがある回は、GitHub の通知の記録も進めない | 一時の障害で、スレッドが3回の数に入って記録を進められてしまわないように。進めると、次の回が 304 になってやり直すスレッドが届かないため（component-backend.md 5.2 に書いた） |
+| S3a `ingest/ingest-service.ts` | 記録の無いスレッドの分解に失敗したら、記録の「分解した時刻」を「since + 5分」にしておく | 次の回も同じ since（「分解した時刻 − 5分」）から分解するため |
+| S3a `ingest/ingest-service.ts` | 立ち上げ時の取り戻しは、成功するまで `catchup` のまま。取り戻しの出来事は終わりに `events:reset` で一覧の全体として送り、`events:added` は定期の取り込みだけで送る | デスクトップ通知（S4）は `live` の出来事だけに出す（DN-1）。つながらないまま立ち上げた後、つながった回を `live` にすると、閉じていた間の出来事にデスクトップ通知が出うるため |
+| S3a `ingest/ingest-service.ts` | 所属チームが読めない（障害・入れない）ときは、前の結果（初めは「読めない」）のまま進め、24時間後に読み直す。つながらない・401・利用制限なら、その回をやり直す | チームの読み取りが続けて失敗しても、取り込み全体が止まらないように（チームを読めないときの判定は domain-model.md 10. #1） |
+| S3a `github/notifications.ts` | M-9 の最新のコメントが 404・形が合わない・開く先が `https://github.com/` でない・api.github.com の外を指すときは「読めなかった」（対象の作者で代える。CR-004）。つながらないなどは、その回をやり直す | 一時の障害で、発言者が実際と違う出来事を保存しないように |
+| S3a `github/client.ts` | GraphQL は `query` で始まる文だけを送り、ほかは問い合わせずに断る | 書き込みをしない（N-06）ことを、コードの検査（S-07）に加えて実行時にも守る |
+| S3a `ingest/ingest-service.ts` | 保存できなかった（ディスクがいっぱいなど）ときは、受け取りの状態を変えず、記録も進めずに次の回にやり直す。ログに `ingest.unexpected` を残す | GitHub の外の失敗で、受け取りの状態（ネットワーク・認証・利用制限・GitHub の障害）を誤って出さないため。区分値は増やさない |
 
 ## 9. ⑮ への申し送り
 

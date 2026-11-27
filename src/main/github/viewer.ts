@@ -1,7 +1,7 @@
 // 利用者（github-api.md 6.）。GET /user で、ユーザー名とトークンのスコープを取る。
-// 所属チーム（GET /user/teams）は、使う取り込み（S3）で足す。
+// GET /user/teams で、所属チーム（チームへのメンションの判定。M-7）を取る。
 import { z } from 'zod'
-import type { GitHubClient, GitHubFailure } from './client'
+import { getAllPages, type GitHubClient, type GitHubFailure } from './client'
 
 export type ViewerResult =
   /** scopes は X-OAuth-Scopes。ヘッダーが無ければ null（fine-grained PAT。auth-flow.md 3.） */
@@ -34,4 +34,31 @@ export async function fetchViewer(client: GitHubClient): Promise<ViewerResult> {
     login: parsed.data.login,
     scopes: parseScopes(result.headers.get('x-oauth-scopes')),
   }
+}
+
+export type TeamsResult =
+  /** "組織/チーム"（@組織/チーム の形。D-020） */
+  { kind: 'ok'; teams: string[] } | { kind: 'failed'; failure: GitHubFailure }
+
+const TeamsPageSchema = z.array(
+  z.object({ slug: z.string().min(1), organization: z.object({ login: z.string().min(1) }) }),
+)
+
+/** 所属チーム（`repo` スコープで読める。0-5 で確かめた。domain-model.md 10. #1） */
+export async function fetchTeams(client: GitHubClient): Promise<TeamsResult> {
+  const result = await getAllPages(
+    client,
+    { endpoint: 'user_teams', path: '/user/teams?per_page=100' },
+    (body) => {
+      const parsed = TeamsPageSchema.safeParse(body)
+      return parsed.success
+        ? parsed.data.map((team) => `${team.organization.login}/${team.slug}`)
+        : undefined
+    },
+  )
+  if (result.kind === 'failed') return result
+  if (result.kind === 'not_modified') {
+    return { kind: 'failed', failure: { kind: 'github_error', status: 304 } }
+  }
+  return { kind: 'ok', teams: result.items }
 }

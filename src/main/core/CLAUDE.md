@@ -30,3 +30,4 @@
 - `constants.ts`: メインプロセスの数値の決まり（重なり5分・デスクトップ通知の10分・抜粋の長さなど）。数を足すときもここに置く
 - `expand-thread.ts`: M-0〜M-9。M-9 は2段で、`expandThread` が `needsMentionFallback` を返し、取り込みの側が最新のコメントを読んで `mentionFallbackEvent` に渡す（CR-004）
 - `expand-workflow-runs.ts`: CI の結果（`ci_activity` のスレッドのワークフロー実行）。利用者が起動して完了したものだけ（⑬ の 0-7 で記録した応答で作った）
+- `select-threads.ts`: 分解するスレッドの選び方（domain-model.md 4.1「分解するスレッド」）と、どの時刻から取るか（5.）。⑭ S3a で足した（CR-010）

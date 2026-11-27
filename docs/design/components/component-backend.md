@@ -6,6 +6,7 @@
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-02・05・06・07・10・19）
 - 更新: 2026-11-27 デバイスフローをやめ、`github/device-flow-client.ts`・`auth/device-flow.ts` を外した（CR-007）
 - 更新: 2026-11-27 ⑭ S2 で `auth/auth-service.ts` を足した。キーチェーンの確かめを S7 に回した
+- 更新: 2026-11-27 ⑭ S3a で `core/select-threads.ts` を足した（CR-010）。取り込みの失敗の分け方と、認証から取り込みへの引き継ぎを書いた
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
 
@@ -84,6 +85,7 @@ src/
       should-notify.ts      デスクトップ通知を出すか（4.4）
       url-guard.ts          URL の検査（I-8）
       mention.ts            @ユーザー名の照合
+      select-threads.ts     分解するスレッドの選び方（domain-model 4.1）と取り込みの範囲（5.）（⑭ S3a。CR-010）
       github-shapes.ts      判定の材料になる GitHub の応答の形（使う項目だけ。github/ が zod で検査して渡す。⑬ B3）
       constants.ts          メインプロセスの数値の決まり（coding-standards.md 4.。core に置くのは、どの部品からも import できるため。⑬ B3）
     github/
@@ -105,7 +107,7 @@ src/
       notifier.ts           Electron の Notification、クリック・失敗の受け取り
     auth/
       pat.ts                PAT の確認
-      auth-service.ts       立ち上げ時のトークンの読み出し・キーチェーンの案内・PAT の受け付け・サインアウトの流れ。状態は組み立てを通して app に知らせる（⑭ S2）
+      auth-service.ts       立ち上げ時のトークンの読み出し・キーチェーンの案内・PAT の受け付け・サインアウトの流れ。状態は組み立てを通して app に知らせる（⑭ S2）。GET /user で確かめたら、組み立てを通して ingest に引き継ぐ（取り込みで 401 を受けたら `expire` で戻ってくる。⑭ S3a）
       token-store.ts        safeStorage（非同期版の関数）で暗号化して保存
     store/
       json-file.ts          一時ファイルに書いて置き換える、読み込み時の検査、壊れたときの退避
@@ -224,15 +226,18 @@ sequenceDiagram
 
 1. `scheduler` が時刻を知らせる（間隔は 6.1）
 2. `github/notifications` で `GET /notifications?all=true&since=…`（`If-None-Match` に前回の `ETag`。CR-003）。304 なら終わり
-3. 理由で分解するスレッドを選び（domain-model 4.1）、スレッドの更新時刻が取り込みの記録より新しいものだけを残す
-4. PR・issue のスレッドは `github/timeline` でまとめて取る（1回に20スレッドまで。github-api.md 3.。PR のレビューは `reviews` の一覧から。CR-002）。CI のスレッドは `github/workflow-runs` で取り、`core/expand-workflow-runs` で出来事にする
+3. 理由で分解するスレッドを選び（domain-model 4.1）、スレッドの更新時刻が取り込みの記録より新しいものだけを残す（`core/select-threads`。CR-010）
+4. PR・issue のスレッドは `github/timeline` でまとめて取る（1回に20スレッドまで。since の順に並べ、まとめた中で一番古い since を使う。github-api.md 3.、CR-009。PR のレビューは `reviews` の一覧から。CR-002）。CI のスレッドは `github/workflow-runs` で取り、`core/expand-workflow-runs` で出来事にする
 5. `core/expand-thread` で出来事にする。M-9 に当たったスレッド（`needsMentionFallback`）は、`subject.latest_comment_url` を読んで `core/expand-thread` の `mentionFallbackEvent`に渡す（CR-004）
 6. `store/events-store` に出来事と取り込みの記録を**同じ書き込みで**保存する（I-5）
 7. 保存できた出来事のうち、`core/should-notify` が真のものを `notify` に渡す
 8. 画面に新しい出来事を知らせる。受け取りの状態を `ok` にする
 
 - 1つのスレッドの分解に失敗したら、そのスレッドの取り込みの記録は進めず、次の回にやり直す。**同じスレッドが続けて3回失敗したら**、ログに残して取り込みの記録を進める（AI案。1つのスレッドのせいで全体が止まらないように）
+  - 「1つのスレッドの失敗」は、GraphQL の別名だけの失敗（errors・消えた・形が合わない）と、そのリポジトリだけの 403・404。つながらない・401・利用制限・GitHub の障害は、その回の全体をやり直す（6.3）（⑭ S3a で決めた）
+  - やり直すスレッドがある回は、GitHub の通知の問い合わせの記録（ETag・前回の成功の時刻）も進めない。進めると、次の回が 304 になり、やり直すスレッドが届かないため（⑭ S3a で決めた）
 - 取り込みの途中でアプリが終わっても、記録を進めていない分は次に取り直す（I-5）
+- 立ち上げ時の取り戻し（`catchup`）は、成功するまで続ける（つながらなかったら、次の回も `catchup`）。取り戻しで増えた出来事は、終わりに一覧の全体（`events:reset`）で送り、定期の取り込みで増えた分だけを `events:added` で送る（⑭ S3a で決めた）
 
 ### 5.3 PR の一覧
 

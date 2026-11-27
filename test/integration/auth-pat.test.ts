@@ -79,6 +79,9 @@ function launch(settings: { lastLaunchedVersion?: string } = {}) {
     },
     clearEvents: () => Promise.resolve(),
     publish: (view) => published.push(view),
+    // 取り込みへの引き継ぎは test/integration/ingest.test.ts で確かめる
+    onSignedIn: () => undefined,
+    onSignedOut: () => undefined,
     timer: { schedule: () => () => undefined },
     now: () => new Date(),
     logger,
@@ -99,7 +102,7 @@ describe('PAT を貼ってサインインする（auth-flow.md 3.）', () => {
     expect(authorizations).toEqual([`Bearer ${TOKEN}`])
     expect(published.at(-1)).toEqual({
       auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-      ingest: { state: 'ok' },
+      ingest: { state: 'syncing' },
     })
     expect(settings.lastLaunchedVersion).toBe('1.2.0')
     expect((await readFile(join(dir, 'token.bin'))).toString()).not.toContain(TOKEN)
@@ -163,7 +166,7 @@ describe('立ち上げ直しとサインアウト（auth-flow.md 4.・6.）', ()
     await vi.waitFor(() =>
       expect(second.published.at(-1)).toEqual({
         auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-        ingest: { state: 'ok' },
+        ingest: { state: 'syncing' },
       }),
     )
     expect(authorizations).toEqual([`Bearer ${TOKEN}`])

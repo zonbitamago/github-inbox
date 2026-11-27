@@ -45,6 +45,8 @@ function setup(
   let lastLaunchedVersion = options.lastLaunchedVersion
   const viewerResults = [...(options.viewer ?? [VIEWER_OK])]
   const published: AuthView[] = []
+  /** 取り込みへの引き継ぎ（signedIn:ユーザー名・signedOut） */
+  const handovers: string[] = []
   const requestedTokens: string[] = []
   const calls: string[] = []
   const timer = fakeTimer()
@@ -84,6 +86,8 @@ function setup(
       return Promise.resolve()
     },
     publish: (view) => published.push(view),
+    onSignedIn: (login) => handovers.push(`signedIn:${login}`),
+    onSignedOut: () => handovers.push('signedOut'),
     timer,
     now: () => NOW,
     logger,
@@ -92,6 +96,7 @@ function setup(
   return {
     service,
     published,
+    handovers,
     requestedTokens,
     calls,
     timer,
@@ -109,9 +114,10 @@ function setup(
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const SIGNED_OUT: AuthView = { auth: { status: 'signed_out' }, ingest: { state: 'signed_out' } }
+/** 確かめられた。ここから先の受け取りの状態は取り込みが知らせる */
 const SIGNED_IN: AuthView = {
   auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-  ingest: { state: 'ok' },
+  ingest: { state: 'syncing' },
 }
 
 describe('立ち上げ（component-backend.md 5.1、auth-flow.md 4.）', () => {
@@ -123,8 +129,8 @@ describe('立ち上げ（component-backend.md 5.1、auth-flow.md 4.）', () => {
     expect(requestedTokens).toEqual([])
   })
 
-  it('版が前と同じなら、すぐ読み出して GET /user で確かめる', async () => {
-    const { service, published, requestedTokens, lastLaunched } = setup({
+  it('版が前と同じなら、すぐ読み出して GET /user で確かめ、取り込みに引き継ぐ', async () => {
+    const { service, published, handovers, requestedTokens, lastLaunched } = setup({
       stored: { kind: 'ok', token: TOKEN },
       lastLaunchedVersion: '1.2.0',
     })
@@ -136,6 +142,7 @@ describe('立ち上げ（component-backend.md 5.1、auth-flow.md 4.）', () => {
     await settle()
     expect(requestedTokens).toEqual([TOKEN])
     expect(published.at(-1)).toEqual(SIGNED_IN)
+    expect(handovers).toEqual(['signedIn:alice'])
     expect(service.token()).toBe(TOKEN)
     expect(lastLaunched()).toBe('1.2.0')
   })
@@ -231,13 +238,16 @@ describe('立ち上げ時の GET /user の失敗（component-backend.md 5.1・6.
     return context
   }
 
-  it('401 なら、認証が切れたとする（やり直さない）', async () => {
-    const { last, timer } = await started([{ kind: 'failed', failure: { kind: 'auth_failed' } }])
+  it('401 なら、認証が切れたとする（やり直さない。取り込みも始めない）', async () => {
+    const { last, timer, handovers } = await started([
+      { kind: 'failed', failure: { kind: 'auth_failed' } },
+    ])
     expect(last()).toEqual({
       auth: { status: 'auth_failed', method: 'pat' },
       ingest: { state: 'auth_failed' },
     })
     expect(timer.pending()).toBe(0)
+    expect(handovers).toEqual([])
   })
 
   it('つながらなければ offline とし、60秒ごとにやり直す', async () => {
@@ -282,8 +292,8 @@ describe('立ち上げ時の GET /user の失敗（component-backend.md 5.1・6.
 })
 
 describe('PAT を貼る（auth-flow.md 3.）', () => {
-  it('確かめて保存し、サインインした状態にする。今の版も覚える', async () => {
-    const { service, last, requestedTokens, calls, lastLaunched } = setup()
+  it('確かめて保存し、サインインした状態にする。今の版も覚え、取り込みを始め直す', async () => {
+    const { service, last, handovers, requestedTokens, calls, lastLaunched } = setup()
     await service.prepare()
     await expect(service.submitPat(`  ${TOKEN}\n`)).resolves.toEqual({
       ok: true,
@@ -292,6 +302,7 @@ describe('PAT を貼る（auth-flow.md 3.）', () => {
     expect(requestedTokens).toEqual([TOKEN])
     expect(calls).toContain('save')
     expect(last()).toEqual(SIGNED_IN)
+    expect(handovers).toEqual(['signedOut', 'signedIn:alice'])
     expect(service.token()).toBe(TOKEN)
     expect(lastLaunched()).toBe('1.2.0')
   })
@@ -349,8 +360,8 @@ describe('PAT を貼る（auth-flow.md 3.）', () => {
 })
 
 describe('サインアウト（auth-flow.md 6.、F-28）', () => {
-  it('トークンと出来事を消し、サインインしていない状態にする', async () => {
-    const { service, calls, last } = setup({
+  it('取り込みを止め、トークンと出来事を消し、サインインしていない状態にする', async () => {
+    const { service, calls, last, handovers } = setup({
       stored: { kind: 'ok', token: TOKEN },
       lastLaunchedVersion: '1.2.0',
     })
@@ -360,6 +371,7 @@ describe('サインアウト（auth-flow.md 6.、F-28）', () => {
     await expect(service.signOut()).resolves.toEqual({ ok: true, value: undefined })
     expect(calls).toEqual(expect.arrayContaining(['remove', 'clearEvents']))
     expect(last()).toEqual(SIGNED_OUT)
+    expect(handovers).toEqual(['signedIn:alice', 'signedOut'])
     expect(service.token()).toBeUndefined()
   })
 
@@ -375,5 +387,31 @@ describe('サインアウト（auth-flow.md 6.、F-28）', () => {
     await settle()
     expect(last()).toEqual(SIGNED_OUT)
     expect(timer.pending()).toBe(0)
+  })
+})
+
+describe('取り込みで認証が切れた（auth-flow.md 5.）', () => {
+  it('認証が切れた状態にし、取り込みを止める。トークンは消さない', async () => {
+    const { service, last, handovers, calls } = setup({
+      stored: { kind: 'ok', token: TOKEN },
+      lastLaunchedVersion: '1.2.0',
+    })
+    await service.prepare()
+    service.resume()
+    await settle()
+    service.expire()
+    expect(last()).toEqual({
+      auth: { status: 'auth_failed', login: 'alice', method: 'pat' },
+      ingest: { state: 'auth_failed' },
+    })
+    expect(handovers).toEqual(['signedIn:alice', 'signedOut'])
+    expect(calls).not.toContain('remove')
+  })
+
+  it('サインインしていないときは何もしない（サインアウトの後に届いた 401 など）', async () => {
+    const { service, published } = setup()
+    await service.prepare()
+    service.expire()
+    expect(published).toEqual([])
   })
 })
