@@ -3,6 +3,7 @@
 - 作成: 2026-11-26（⑫ 設計検証）
 - 入力: [requirements.md](../../requirements/requirements.md)、[acceptance.md](../../requirements/acceptance.md)、`docs/design/` の全成果物
 - 状態: AI が下書きし、技術者が確認済み（2026-11-26）。設計レビューの対応（DR-01）を反映した
+- 更新: 2026-11-27 N-09 を △ にした（D-033。CR-011）
 
 要件（F・N・C）ごとに、設計のどこに反映したか、どの受け入れ条件（AC・NF）とテストの層で確かめるかを並べる。漏れ（設計やテストが無い）と過剰（要件に根拠が無い設計）を見つけるための表。
 
@@ -66,7 +67,7 @@
 | N-06 | M | ADR-002、github-api 1.、security-rules S-02・S-07 | AC-33、NF-07 | テスト（書き込みの検査）・コードレビュー | ○ |
 | N-07 | S | component-backend 6.1（スリープからの復帰）・6.3 | AC-13 | 結合M | ○ |
 | N-08 | M | domain-model 6.（`IngestState`）、component-backend 6.3、component-frontend 2.2（status） | AC-14、NF-08、Q-06 | 結合M・E2E | ○ |
-| N-09 | M | component-backend 5.4、domain-model 6.（`DesktopNotificationFailure`） | AC-38、Q-07 | 手動 | ○ |
+| N-09 | M | component-backend 5.4、domain-model 6.（`DesktopNotificationFailure`） | AC-38、Q-07 | 手動 | △ Mac で OS の設定でオフにされたことは見分けられない。試しのデスクトップ通知で利用者に確かめる（D-033） |
 | N-10 | M | ADR-009、component-backend 7.、security-rules S-15 | AC-40、Q-09 | 結合M | ○ |
 
 ---
