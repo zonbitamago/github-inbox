@@ -63,6 +63,17 @@ describe('出す画面の選び方（component-frontend.md 1.）', () => {
   ])('%s → %s', (_name, state, expected) => {
     expect(selectPage(state, true)).toBe(expected)
   })
+
+  it.each([
+    ['使い始めの案内を開き直している', appState(), 'onboarding_again'],
+    [
+      '開き直していても、サインインしていなければ初めからの案内',
+      appState({ auth: { status: 'signed_out' } }),
+      'onboarding',
+    ],
+  ])('%s → %s', (_name, state, expected) => {
+    expect(selectPage(state, false, true)).toBe(expected)
+  })
 })
 
 // component-frontend.md 1.・4.（設定を開いているかは画面の中だけの状態）
@@ -100,6 +111,39 @@ describe('設定の画面を開く・閉じる', () => {
     expect(screen.getByRole('heading', { name: '使い始めの案内' })).toBeTruthy()
     act(() => api.push('state:changed', appState()))
     expect(screen.getByRole('tablist')).toBeTruthy()
+  })
+})
+
+// component-frontend.md 3.（⑭ S6b）
+describe('使い始めの案内をもう一度', () => {
+  async function openAgain() {
+    const api = await renderApp(appState())
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    await userEvent.click(screen.getByRole('button', { name: '使い始めの案内をもう一度' }))
+    return api
+  }
+
+  it('設定から開き直すと、サインインを飛ばした案内を出す', async () => {
+    await openAgain()
+    expect(screen.getByRole('heading', { name: '使い始めの案内' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'GitHub の通知設定を確かめる' })).toBeTruthy()
+    expect(screen.getByText('手順 1 / 3')).toBeTruthy()
+  })
+
+  it('終えたら、設定ではなくメインの画面に戻る', async () => {
+    const api = await openAgain()
+    await userEvent.click(screen.getByRole('button', { name: '飛ばす' }))
+    await userEvent.click(screen.getByRole('button', { name: '飛ばす' }))
+    await userEvent.click(screen.getByRole('button', { name: '使い始める' }))
+    expect(api.invocations.at(-1)).toEqual({ channel: 'onboarding:complete', args: undefined })
+    expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
+  })
+
+  it('デスクトップ通知がクリックされたら、案内を閉じて出来事の一覧に戻る（F-08）', async () => {
+    const api = await openAgain()
+    act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
+    expect(screen.queryByRole('heading', { name: '使い始めの案内' })).toBeNull()
+    expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
   })
 })
 
@@ -228,45 +272,11 @@ describe('認証の画面（S2。component-frontend.md 1.・3.、auth-flow.md 4.
     expect(screen.getByRole('heading', { name: 'GitHub でサインイン' })).toBeTruthy()
   })
 
-  it('サインインできたら、届いた状態で手順5（終わり）に切り替わる', async () => {
-    const api = await renderApp(
-      appState({ auth: { status: 'signed_out' }, onboardingRequired: true }),
-    )
-    act(() =>
-      api.push(
-        'state:changed',
-        appState({
-          auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-          onboardingRequired: true,
-        }),
-      ),
-    )
-    expect(screen.getByRole('heading', { name: '準備ができました' })).toBeTruthy()
-    expect(screen.getByText('alice')).toBeTruthy()
-  })
-
-  it('手順5の「使い始める」で、使い始めの案内を終えるよう頼む', async () => {
-    const api = await renderApp(
-      appState({
-        auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-        onboardingRequired: true,
-      }),
-    )
-    await userEvent.click(screen.getByRole('button', { name: '使い始める' }))
-    expect(api.invocations).toEqual([{ channel: 'onboarding:complete', args: undefined }])
-  })
-
-  it('案内を終えられなければ、その旨を出す', async () => {
-    await renderApp(
-      appState({
-        auth: { status: 'signed_in', login: 'alice', method: 'pat' },
-        onboardingRequired: true,
-      }),
-      [],
-      { 'onboarding:complete': { ok: false, error: { code: 'not_signed_in' } } },
-    )
-    await userEvent.click(screen.getByRole('button', { name: '使い始める' }))
-    expect(screen.getByRole('alert').textContent).toBe('進めませんでした。もう一度押してください。')
+  it('サインインできたら、手順3（GitHub の通知設定）に進む', async () => {
+    await renderApp(appState({ auth: { status: 'signed_out' }, onboardingRequired: true }))
+    await userEvent.type(screen.getByLabelText('トークン'), 'test-token-not-real')
+    await userEvent.click(screen.getByRole('button', { name: 'サインイン' }))
+    expect(screen.getByRole('heading', { name: 'GitHub の通知設定を確かめる' })).toBeTruthy()
   })
 
   it('案内を終えたら、届いた状態でメインの画面に切り替わる', async () => {

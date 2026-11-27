@@ -147,12 +147,28 @@ describe('デスクトップ通知を出せなかったことの知らせ（N-09
     )
   })
 
-  it('アプリケーションフォルダの外から開いているなら、移して開き直すよう出す', async () => {
-    await renderPage(failed('outside_applications_folder'))
+  it('アプリケーションフォルダの外から開いているなら、移して開き直せる（F-36 (1)。⑭ S6b）', async () => {
+    const api = await renderPage(failed('outside_applications_folder'))
     expect(screen.getByRole('status').textContent).toMatch(
       /デスクトップ通知を出せませんでした。アプリケーションフォルダの外から開いているためです。/,
     )
     expect(screen.queryByRole('button', { name: 'OS の通知の設定を開く' })).toBeNull()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'アプリケーションフォルダに移して開き直す' }),
+    )
+    expect(api.invocations).toEqual([
+      { channel: 'onboarding:moveToApplicationsFolder', args: undefined },
+    ])
+  })
+
+  it('移せなければ、手で移す方法を出す', async () => {
+    await renderPage(failed('outside_applications_folder'), {
+      'onboarding:moveToApplicationsFolder': { ok: false, error: { code: 'not_supported' } },
+    })
+    await userEvent.click(
+      screen.getByRole('button', { name: 'アプリケーションフォルダに移して開き直す' }),
+    )
+    expect(screen.getByRole('alert').textContent).toContain('Finder で github-inbox')
   })
 
   it('受け取れていない知らせとは別に出し、出せるようになったら消える', async () => {
@@ -166,6 +182,41 @@ describe('デスクトップ通知を出せなかったことの知らせ（N-09
     act(() => api.push('state:changed', appState({ ingest: { state: 'offline' } })))
     expect(screen.getAllByRole('status')).toHaveLength(1)
     expect(screen.queryByText(/デスクトップ通知を出せませんでした/)).toBeNull()
+  })
+})
+
+// F-31、AC-31、component-frontend.md 2.2 の UpdateBanner（⑭ S6b）
+describe('新しい版の知らせ', () => {
+  const UPDATE = {
+    version: '1.3.0',
+    url: 'https://github.com/zonbitamago/github-inbox/releases/tag/v1.3.0',
+  }
+
+  it('新しい版が出ていたら版を出し、ダウンロードのページを開ける', async () => {
+    const api = await renderPage(appState({ update: UPDATE }))
+    expect(screen.getByRole('status').textContent).toContain('新しい版 1.3.0 が出ています。')
+    await userEvent.click(screen.getByRole('button', { name: 'ダウンロードのページを開く' }))
+    expect(api.invocations).toEqual([{ channel: 'shell:openGitHub', args: { url: UPDATE.url } }])
+  })
+
+  it('開けなければ理由を出す', async () => {
+    await renderPage(appState({ update: UPDATE }), {
+      'shell:openGitHub': { ok: false, error: { code: 'url_not_allowed' } },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'ダウンロードのページを開く' }))
+    expect(screen.getByRole('alert').textContent).toBe(
+      'ダウンロードのページを開けませんでした。もう一度押してください。',
+    )
+  })
+
+  it('新しい版が無ければ出さない', async () => {
+    await renderPage(appState())
+    expect(screen.queryByText(/新しい版/)).toBeNull()
+  })
+
+  it('英語のときは英語で出す', async () => {
+    await renderPage(appState({ update: UPDATE }, { language: 'en' }))
+    expect(screen.getByText('A new version 1.3.0 is available.')).toBeTruthy()
   })
 })
 

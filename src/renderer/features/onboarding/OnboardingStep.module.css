@@ -1,0 +1,32 @@
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.position {
+  margin: 0;
+  color: var(--color-text-mute);
+  font: var(--font-caption);
+}
+
+.title {
+  margin: 0;
+  font: var(--font-heading);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.body p {
+  margin: 0;
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
