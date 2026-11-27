@@ -1,11 +1,11 @@
-// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み。
-// デスクトップ通知（S4）・PR の一覧（S5）は、各スライスで足していく。
+// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み、
+// S4 はデスクトップ通知。PR の一覧（S5）は、そのスライスで足す。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
 import { AppStateHolder } from './app/app-state'
-import { createGitHubOpener } from './app/external'
+import { createDesktopNotificationSettingsOpener, createGitHubOpener } from './app/external'
 import { applyApplicationMenu, createMainWindow } from './app/window'
 import { AuthService } from './auth/auth-service'
 import { TokenStore } from './auth/token-store'
@@ -16,12 +16,27 @@ import { IngestService } from './ingest/ingest-service'
 import type { Timer } from './ingest/scheduler'
 import { createPusher, createSenderCheck, registerInvokeHandlers } from './ipc/handlers'
 import { createLogger } from './log/logger'
+import {
+  createElectronDesktopNotification,
+  isDesktopNotificationSupported,
+} from './notify/electron-desktop-notification'
+import { DesktopNotifier } from './notify/notifier'
 import { EventsStore } from './store/events-store'
 import { SettingsStore } from './store/settings-store'
 
 const errorName = (error: unknown) => (error instanceof Error ? error.name : typeof error)
 
 let mainWindow: BrowserWindow | null = null
+
+/** 窓を前に出す（最小化していれば戻す）。2つめの立ち上げと、デスクトップ通知のクリック（F-08）で使う */
+function bringMainWindowToFront(): void {
+  if (mainWindow === null) return
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+  // Mac では、他のアプリが前にあっても本アプリを前に出す（利用者がクリックしたときだけ呼ぶ）
+  if (process.platform === 'darwin') app.focus({ steal: true })
+}
 
 async function start(): Promise<void> {
   const userData = app.getPath('userData')
@@ -73,6 +88,21 @@ async function start(): Promise<void> {
       now,
     })
 
+  // デスクトップ通知（component-backend.md 5.4）。クリックされたら窓を前に出し、画面にその出来事を知らせる（F-08）
+  const notifier = new DesktopNotifier({
+    isSupported: isDesktopNotificationSupported,
+    create: createElectronDesktopNotification,
+    settings: () => settingsStore.current(),
+    outsideApplicationsFolder: () => platform === 'darwin' && !app.isInApplicationsFolder(),
+    now,
+    logger,
+    publishFailure: (view) => state.update({ desktopNotification: view }),
+    focusEvent: (eventId) => {
+      bringMainWindowToFront()
+      pusher.send('ui:focusEvent', { eventId })
+    },
+  })
+
   const timer: Timer = {
     schedule: (callback, delayMs) => {
       const handle = setTimeout(callback, delayMs)
@@ -91,7 +121,11 @@ async function start(): Promise<void> {
     now,
     logger,
     publish: (view) => state.update({ ingest: view }),
-    added: (events) => pusher.send('events:added', events),
+    // 定期の取り込みで増えた出来事は、画面に足し、デスクトップ通知を出すかを決める（取り戻しの出来事は届かない。DN-1）
+    added: (events) => {
+      pusher.send('events:added', events)
+      notifier.notifyLive(events)
+    },
     reset: (events) => pusher.send('events:reset', events),
     // 401 を受けたら、認証が切れた状態にする（auth-flow.md 5.）
     authFailed: () => auth.expire(),
@@ -158,6 +192,7 @@ async function start(): Promise<void> {
       'auth:continueAfterKeychainNotice': () => auth.continueAfterKeychainNotice(),
       'auth:signOut': () => auth.signOut(),
       'shell:openGitHub': ({ url }) => openGitHub(url),
+      'os:openNotificationSettings': createDesktopNotificationSettingsOpener(platform),
       // 使い始めの案内を終える（component-frontend.md 3. の手順5）。サインインしてからでないと終えられない
       'onboarding:complete': async () => {
         if (state.get().auth.status !== 'signed_in') {
@@ -203,10 +238,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    if (mainWindow === null) return
-    if (mainWindow.isMinimized()) mainWindow.restore()
-    mainWindow.show()
-    mainWindow.focus()
+    bringMainWindowToFront()
   })
   // 窓を閉じたら終了する（F-24）
   app.on('window-all-closed', () => {
