@@ -2,13 +2,21 @@
 // 出すかは core の判定（domain-model.md 4.4。I-6）で決め、Electron の Notification で出す。
 // クリックされたら、その出来事を知らせる（組み立てが窓を前に出し、画面に ui:focusEvent を送る）。
 // 出せなかったら（Electron の failed）理由を判定して知らせ、次に出せたら知らせを消す。
+// 使い始めの案内の手順4と設定の画面の試しのデスクトップ通知も、同じ部品で出す（⑭ S6b。ipc-contract.md 2.）。
 import type { DesktopNotificationFailure, GitHubEvent, Settings } from '../../shared/domain'
 import type { AppState } from '../../shared/ipc-contract'
 import { shouldNotify } from '../core/should-notify'
 import type { Logger } from '../log/logger'
-import { desktopNotificationText, type DesktopNotificationText } from './desktop-notification-text'
+import {
+  desktopNotificationText,
+  testDesktopNotificationText,
+  type DesktopNotificationText,
+} from './desktop-notification-text'
 
 export type DesktopNotificationEvent = 'show' | 'click' | 'failed' | 'close'
+
+/** 試しのデスクトップ通知の結果（ipc-contract.md 2.）。shown は OS が受け付けたという意味（Mac では OS の設定でオフでも shown。CR-011） */
+export type TestDesktopNotificationOutcome = 'shown' | 'failed' | 'unknown'
 
 /** Electron の Notification のうち使うところ（テストでは偽物に差し替える。component-backend.md 9.） */
 export interface DesktopNotificationHandle {
@@ -28,6 +36,10 @@ export interface DesktopNotifierDeps {
   publishFailure: (view: AppState['desktopNotification']) => void
   /** クリックされた出来事 */
   focusEvent: (eventId: string) => void
+  /** 試しのデスクトップ通知がクリックされたとき（窓を前に出す） */
+  bringToFront: () => void
+  /** callback を delayMs 後に呼ぶ。戻り値で取り消す（試しのデスクトップ通知の待ち時間） */
+  schedule: (callback: () => void, delayMs: number) => () => void
 }
 
 /**
@@ -35,6 +47,9 @@ export interface DesktopNotifierDeps {
  * 消されるまで持っておく必要がある）。古いものから手放す（AI案）
  */
 const RETAINED_LIMIT = 100
+
+/** 試しのデスクトップ通知で、出た・失敗したを待つ時間（ipc-contract.md 2.） */
+export const TEST_WAIT_MS = 5 * 1000
 
 export class DesktopNotifier {
   /** もう出した出来事の id（DN-4）。取り戻しの出来事には出さないため、立ち上げてからの分だけ持つ */
@@ -71,6 +86,45 @@ export class DesktopNotifier {
     }
   }
 
+  /**
+   * 試しのデスクトップ通知を1件出し、5秒待って結果を返す（F-36 (4)、D-033）。失敗したら出来事のときと同じく知らせ、
+   * 出せたら知らせを消す。クリックされたら窓を前に出す
+   */
+  sendTest(): Promise<TestDesktopNotificationOutcome> {
+    if (!this.deps.isSupported()) {
+      this.fail(undefined, 'os_rejected')
+      return Promise.resolve('failed')
+    }
+    const handle = this.deps.create(testDesktopNotificationText(this.deps.settings().language))
+    this.retain(handle)
+    return new Promise((resolve) => {
+      let settled = false
+      const settle = (outcome: TestDesktopNotificationOutcome) => {
+        if (settled) return
+        settled = true
+        cancelWait()
+        this.deps.logger.info('notify.test', { outcome })
+        resolve(outcome)
+      }
+      const cancelWait = this.deps.schedule(() => settle('unknown'), TEST_WAIT_MS)
+      handle.on('show', () => {
+        this.recovered()
+        settle('shown')
+      })
+      handle.on('failed', () => {
+        this.retained.delete(handle)
+        this.fail(undefined, this.failureReason())
+        settle('failed')
+      })
+      handle.on('click', () => {
+        this.retained.delete(handle)
+        this.deps.bringToFront()
+      })
+      handle.on('close', () => this.retained.delete(handle))
+      handle.show()
+    })
+  }
+
   private show(event: GitHubEvent, language: Settings['language']): void {
     const handle = this.deps.create(desktopNotificationText(event, language))
     this.retain(handle)
@@ -80,10 +134,7 @@ export class DesktopNotifier {
         type: event.type,
         occurredAt: event.occurredAt,
       })
-      if (this.failing) {
-        this.failing = false
-        this.deps.publishFailure({})
-      }
+      this.recovered()
     })
     handle.on('click', () => {
       this.retained.delete(handle)
@@ -92,12 +143,20 @@ export class DesktopNotifier {
     handle.on('close', () => this.retained.delete(handle))
     handle.on('failed', () => {
       this.retained.delete(handle)
-      this.fail(
-        event.id,
-        this.deps.outsideApplicationsFolder() ? 'outside_applications_folder' : 'os_rejected',
-      )
+      this.fail(event.id, this.failureReason())
     })
     handle.show()
+  }
+
+  /** 出せたら、出せなかったことの知らせを消す */
+  private recovered(): void {
+    if (!this.failing) return
+    this.failing = false
+    this.deps.publishFailure({})
+  }
+
+  private failureReason(): DesktopNotificationFailure {
+    return this.deps.outsideApplicationsFolder() ? 'outside_applications_folder' : 'os_rejected'
   }
 
   private retain(handle: DesktopNotificationHandle): void {

@@ -19,17 +19,21 @@ async function renderPage(state: AppState = appState(), answers: FakeAnswers = {
   const api = createFakeApi({ state, answers })
   const store = createMainStore(api)
   let closed = 0
+  let restarted = 0
   render(
     <MainStoreProvider store={store}>
       <SettingsPage
         onClose={() => {
           closed += 1
         }}
+        onRestartOnboarding={() => {
+          restarted += 1
+        }}
       />
     </MainStoreProvider>,
   )
   await act(() => store.start())
-  return Object.assign(api, { closed: () => closed })
+  return Object.assign(api, { closed: () => closed, restarted: () => restarted })
 }
 
 const section = (name: string) => screen.getByRole('region', { name })
@@ -231,5 +235,48 @@ describe('アカウント（F-28）', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'GitHub のページを開けませんでした。もう一度押してください。',
     )
+  })
+})
+
+// D-033、AC-38。component-frontend.md 2.1（⑭ S6b）
+describe('デスクトップ通知が出ないとき', () => {
+  it('試しのデスクトップ通知を出せる。Mac では出たと知らされても、表示されたかを聞く', async () => {
+    const api = await renderPage(appState(), {
+      'onboarding:sendTestNotification': { ok: true, value: { outcome: 'shown' } },
+    })
+    const help = section('デスクトップ通知が出ないとき')
+    await userEvent.click(
+      within(help).getByRole('button', { name: '試しのデスクトップ通知を出す' }),
+    )
+    expect(api.invocations).toEqual([
+      { channel: 'onboarding:sendTestNotification', args: undefined },
+    ])
+    expect(help.textContent).toContain('デスクトップ通知が表示されましたか？')
+  })
+
+  it('「表示されなかった」なら、直し方と OS の通知の設定を開くボタンを出す', async () => {
+    const api = await renderPage(appState(), {
+      'onboarding:sendTestNotification': { ok: true, value: { outcome: 'shown' } },
+    })
+    const help = section('デスクトップ通知が出ないとき')
+    await userEvent.click(
+      within(help).getByRole('button', { name: '試しのデスクトップ通知を出す' }),
+    )
+    await userEvent.click(within(help).getByRole('button', { name: '表示されなかった' }))
+    expect(help.textContent).toContain('github-inbox の通知を許可してください')
+    await userEvent.click(within(help).getByRole('button', { name: 'OS の通知の設定を開く' }))
+    expect(api.invocations.at(-1)).toEqual({
+      channel: 'os:openNotificationSettings',
+      args: undefined,
+    })
+  })
+})
+
+// component-frontend.md 3.（⑭ S6b）
+describe('使い始めの案内（もう一度）', () => {
+  it('「使い始めの案内をもう一度」で開き直す', async () => {
+    const api = await renderPage()
+    await userEvent.click(screen.getByRole('button', { name: '使い始めの案内をもう一度' }))
+    expect(api.restarted()).toBe(1)
   })
 })

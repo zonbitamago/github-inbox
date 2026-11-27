@@ -10,6 +10,7 @@
 - 更新: 2026-11-27 ⑭ S4 で `notify/` の中身と、デスクトップ通知の文言・クリック・失敗・OS の通知の設定を開く先を書いた。Mac で OS の設定でオフにしても `failed` が出ないことを書いた（CR-011）
 - 更新: 2026-11-27 ⑭ S5 で、PR の一覧を取るときの細部（サインイン・サインアウトとの関係、失敗、続きのページ、ログ）を 5.3 に書いた
 - 更新: 2026-11-27 ⑭ S6a で、設定を変えたときの効き目（`app/settings-change.ts`）、自動起動、コピー、開発中のメニューを 8. に書いた
+- 更新: 2026-11-27 ⑭ S6b で、新しい版を確かめる時（サインインした後と24時間ごと）を 5.1 に、試しのデスクトップ通知を 5.4 に、アプリケーションフォルダへの移動を 8.・11. に書いた
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
 
@@ -222,10 +223,11 @@ sequenceDiagram
   else トークンが無い
     W->>W: 使い始めの案内（F-36）
   end
-  A->>G: 新しい版の確認（F-31。立ち上げ時と24時間ごと）
+  A->>G: 新しい版の確認（F-31。立ち上げ時と24時間ごと。⑭ S6b: サインインした後に）
 ```
 
 - 保存済みの出来事は、トークンの復号や GitHub への問い合わせを待たずに出す（Q-03、ADR-006）。利用者のユーザー名（自分の操作を除く判定 M-0 に使う）は GitHub に聞くまで分からないが、分解はつながってからしか行わないため困らない（DR-05）
+- 新しい版の確認（`app/update-check.ts`・`github/releases.ts`。⑭ S6b）は、サインインしたとき（立ち上げ直後の確かめを含む）に行い、その後は24時間ごと。GitHub への問い合わせはトークンが要るため、サインインしていない間は確かめない（2026-11-27 技術者が決めた）。サインアウト・認証が切れたら次の確認を取り消し、知らせた新しい版は残す。今の版（`package.json` の version）より新しい `v1.2.3` の版があれば、版と Releases のページ（`https://github.com/` のものだけ）を `AppState.update` で画面に知らせる。版がまだ無い（404）・同じか古い版なら知らせを消し、失敗したらログに書いて次の回を待つ
 
 ### 5.2 定期の取り込み（1回分）
 
@@ -266,7 +268,7 @@ sequenceDiagram
 - Mac（macOS 26）で、OS の設定で本アプリの「通知を許可」をオフにしても、Electron は `failed` ではなく `show` を出す（OS は頼みを受け付け、何も出さない。⑭ S4 の MC-03 で確かめた。CR-011）。アプリからは見分けられないため、試しのデスクトップ通知で利用者に確かめてもらう（D-033。component-frontend.md 3. の手順4と設定の画面）。OS の通知の設定を読む部品は足さない
 - アプリケーションフォルダの外から開いても、同じ識別子のアプリを一度でもアプリケーションフォルダで開いていれば、OS は断らずに出す（⑭ S4 の MC-04）。`outside_applications_folder` になるのは、一度もアプリケーションフォルダに置かずに開いたとき（試作の一時フォルダ、DMG やダウンロードフォルダから初めて開く）と見込む。S7 の DMG で確かめる
 - ログには、出した記録（出来事の id・種類・発生の時刻。`notify.shown`）と失敗（出来事の id・理由。`notify.failed`）を書く。タイトル・本文は書かない（S-09）
-- 使い始めの案内 (4) の試しのデスクトップ通知も同じ部品で出す
+- 使い始めの案内 (4) の試しのデスクトップ通知も同じ部品で出す（⑭ S6b: `DesktopNotifier.sendTest`。設定の画面の「デスクトップ通知が出ないとき」からも使う。D-033）。1件出して5秒待ち、`show` なら `shown`、`failed` なら `failed`、どちらも来なければ `unknown` を返す。失敗したら出来事のときと同じく画面に知らせ、出せたら知らせを消す。クリックされたら窓を前に出すだけ（出来事は知らせない）。ログには結果だけを書く（`notify.test`）
 
 ---
 
@@ -335,7 +337,7 @@ sequenceDiagram
 | 窓（F-23・F-24） | `BrowserWindow` を1つ。`window-all-closed` で終了 | Mac の Dock・Cmd+Tab、Windows の Alt+Tab に出る（試作で確かめた）。`app.requestSingleInstanceLock()` で二重の立ち上げを防ぐ（自動起動と手動の重なりなど） |
 | 画面の安全（ADR-007、Q-11） | `contextIsolation: true`・`nodeIntegration: false`・`sandbox: true`。画面から別の URL へ移る・新しい窓を開くことを止める（`will-navigate`・`setWindowOpenHandler`） | CSP は component-frontend.md |
 | 自動起動（F-25） | `app.setLoginItemSettings`・`getLoginItemSettings` | Mac は試作で確かめた。Windows は確かめていない（D-021）。⑭ S6a: 変えた後に OS から読み直した値を返し、画面に知らせる（`app/login-item.ts`）。開発用の立ち上げでは Electron そのものがログイン項目に入るため、確かめは配布物と同じ作りのビルドで（manual-checklist.md の MC-10） |
-| アプリケーションフォルダへの移動（F-36 (1)） | `app.isInApplicationsFolder()`・`app.moveToApplicationsFolder()` | DMG の中（読み取り専用）から開いた場合も移せるか、署名しないアプリで動くかは ⑭ で手動で確かめる |
+| アプリケーションフォルダへの移動（F-36 (1)） | `app.isInApplicationsFolder()`・`app.moveToApplicationsFolder()` | DMG の中（読み取り専用）から開いた場合も移せるか、署名しないアプリで動くかは ⑭ で手動で確かめる。⑭ S6b: `app/applications-folder.ts`。Mac の配布物だけで動かし、開発用の立ち上げでは移さない（`node_modules` の Electron を移さないため）。利用者が許可の確認でやめた・移せなかったら `internal`。ダウンロードフォルダに置いた ad-hoc 署名のアプリは、移して開き直せた（manual-checklist.md の MC-11）。元のアプリはダウンロードフォルダに残った（Electron は元をゴミ箱に入れようとするが、失敗しても止めない） |
 | ブラウザで開く（F-12・F-17・F-36 (3)） | `shell.openExternal` | `core/url-guard` を通したものだけ（I-8） |
 | OS の通知の設定を開く（N-09・F-36 (4)） | `shell.openExternal` | 開く先はメインが OS ごとに決めた固定の先だけ（S-06）。Mac は `x-apple.systempreferences:com.apple.Notifications-Settings.extension`（macOS 13 以降のシステム設定の「通知」）、Windows は `ms-settings:notifications`（⑭ S4） |
 | コピー（F-34） | `clipboard.writeText` | URL の検査を通したものだけを、改行でつないで書く（⑭ S6a: `app/external.ts`。1件でも通らなければ全体を断り、0件なら書かない） |
@@ -386,7 +388,7 @@ sequenceDiagram
 | --- | --- |
 | HTTP の部品 | 決めた（⑪）: Node.js の `fetch` をそのまま使う（coding-standards.md 1.） |
 | ログの部品 | 決めた（⑪）: 自前の小さな仕組み（coding-standards.md 1.、security-rules.md S-09） |
-| `app.moveToApplicationsFolder()` が署名しないアプリ・DMG の中から動くか | ⑭ で手動で確かめる（AI） |
+| `app.moveToApplicationsFolder()` が署名しないアプリ・DMG の中から動くか | ad-hoc 署名のアプリをダウンロードフォルダから移せることは**確かめた**（2026-11-27。⑭ S6b の MC-11。元のアプリは残った）。DMG の中からは S7 の DMG で確かめる（AI） |
 | 版が変わったとき、キーチェーンの確認が出るのが safeStorage を呼んだときか、立ち上げ直後か（auth-flow.md 4.） | ⑭ の S7 で手動で確かめる（AI。版の違う配布物が要るため。2026-11-27 技術者が決めた） |
 | Windows の自動起動・デスクトップ通知 | 確かめていない（D-021）。⑫ のリスク登録簿 |
 | `/Applications` に置いた配布物でデスクトップ通知が出るか（試作は `~/Applications` だけで確かめた） | **確かめた**（2026-11-27。⑭ S4 の MC-01: `/Applications` に置いた ad-hoc 署名の配布物で出て、クリックで前に出た）。Mac の利用者は全員が管理者の権限を持つ（D-028。DR-07） |

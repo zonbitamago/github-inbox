@@ -125,6 +125,8 @@ export function createFakeApi(responses: {
     'auth:signOut': OK_VOID,
     'shell:openGitHub': OK_VOID,
     'os:openNotificationSettings': OK_VOID,
+    'onboarding:moveToApplicationsFolder': OK_VOID,
+    'onboarding:sendTestNotification': { ok: true, value: { outcome: 'shown' } },
     'onboarding:complete': OK_VOID,
     ...responses.answers,
   }

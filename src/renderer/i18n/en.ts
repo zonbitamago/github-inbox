@@ -11,6 +11,50 @@ export const en: Record<keyof typeof ja, string> = {
   'onboarding.finish.signedInAs': 'Signed in as',
   'onboarding.finish.start': 'Start',
   'onboarding.finish.failed': 'Could not continue. Please try again.',
+  'onboarding.step': 'Step {current} of {total}',
+  'onboarding.back': 'Back',
+  'onboarding.next': 'Next',
+  'onboarding.skip': 'Skip',
+  'onboarding.later': 'Later',
+  'onboarding.applicationsFolder.title': 'Move to the Applications folder',
+  'onboarding.applicationsFolder.body':
+    'This app was opened from outside the Applications folder. Desktop notifications may not work this way. Move it to the Applications folder and reopen it.',
+  'onboarding.applicationsFolder.laterNote':
+    'If you choose Later, a notice appears at the top of the window when a desktop notification cannot be shown.',
+  'onboarding.signIn.title': 'Sign in to GitHub',
+  'onboarding.githubSettings.title': 'Check your GitHub notification settings',
+  'onboarding.githubSettings.intro':
+    'This app builds events from your GitHub notifications. Check that your GitHub notification settings are as follows.',
+  'onboarding.githubSettings.participating':
+    'Set "Participating, @mentions and custom" to "on GitHub" (conversations you join and mentions)',
+  'onboarding.githubSettings.actions':
+    'Set "Actions" to "on GitHub" (with email only, CI results do not arrive)',
+  'onboarding.githubSettings.failedOnly':
+    'Turn off "Only notify for failed workflows" under "Actions" (when on, successful CI results do not arrive)',
+  'onboarding.githubSettings.open': 'Open GitHub notification settings',
+  'onboarding.githubSettings.openFailed': 'Could not open the GitHub page. Please try again.',
+  'onboarding.desktopNotification.title': 'Test desktop notification',
+  'onboarding.desktopNotification.intro':
+    'Show one test desktop notification to check that desktop notifications appear.',
+  'applicationsFolder.move': 'Move to Applications and reopen',
+  'applicationsFolder.moveFailed':
+    'Could not move the app. In Finder, drag github-inbox to the Applications folder, then reopen it.',
+  'desktopNotificationCheck.send': 'Show a test desktop notification',
+  'desktopNotificationCheck.sendAgain': 'Show again',
+  'desktopNotificationCheck.sending': 'Showing',
+  'desktopNotificationCheck.sendFailed':
+    'Could not show a test desktop notification. Please try again.',
+  'desktopNotificationCheck.question': 'Did the desktop notification appear?',
+  'desktopNotificationCheck.shown': 'It appeared',
+  'desktopNotificationCheck.notShown': 'It did not appear',
+  'desktopNotificationCheck.confirmed': 'Desktop notifications are working.',
+  'desktopNotificationCheck.fix.osSettings':
+    'Allow notifications for github-inbox in your OS notification settings. They also do not appear while Focus is on. After fixing it, show the test again.',
+  'desktopNotificationCheck.fix.applicationsFolder':
+    'Desktop notifications cannot be shown because the app is opened from outside the Applications folder. Move it to the Applications folder and reopen it.',
+  'update.available': 'A new version {version} is available.',
+  'update.open': 'Open the download page',
+  'update.openFailed': 'Could not open the download page. Please try again.',
   'auth.signIn.title': 'Sign in to GitHub',
   'auth.signIn.again': 'Sign in to GitHub again',
   'auth.signIn.back': 'Back to events',
@@ -73,6 +117,13 @@ export const en: Record<keyof typeof ja, string> = {
   'settings.loginItem.title': 'Launch at login',
   'settings.loginItem.label': 'Open when you log in',
   'settings.loginItem.failed': 'Could not change launch at login. Please try again.',
+  'settings.desktopNotificationHelp.title': 'If desktop notifications do not appear',
+  'settings.desktopNotificationHelp.description':
+    'Show one test desktop notification to check whether it appears.',
+  'settings.onboarding.title': 'Getting started',
+  'settings.onboarding.description':
+    'See how to check your GitHub notification settings and test desktop notifications again.',
+  'settings.onboarding.restart': 'Show the getting started guide again',
   'settings.account.title': 'Account',
   'settings.account.signedInAs': 'Signed in as',
   'settings.account.signOut': 'Sign out',

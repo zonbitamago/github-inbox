@@ -1,5 +1,5 @@
 // メインの画面（component-frontend.md 2.1 の MainPage）。上部の知らせ（受け取れていない。S3。デスクトップ通知の失敗。S4）と、
-// 出来事の一覧と PR の一覧（S5）。並べ方は設定に従い、タブで切り替えるか左右に並べる（F-33。S6a）。新しい版の帯は S6b で足す。
+// 出来事の一覧と PR の一覧（S5）。並べ方は設定に従い、タブで切り替えるか左右に並べる（F-33。S6a）。新しい版の帯（F-31。S6b）。
 // 帯の「サインインし直す」を押したら、画面の中だけの状態で PAT の貼り付けを出す（CR-008。設定を開いているのと同じ扱い）。
 // デスクトップ通知がクリックされたら（ui:focusEvent。F-08）、出来事の一覧のタブに戻し、その出来事を強調する（component-frontend.md 5.）。
 // キーボード: Cmd+R（Windows は Ctrl+R）で PR の一覧をリロード、Cmd+F で今の一覧の検索欄へ、Cmd+, で設定（component-frontend.md 5.）。
@@ -10,6 +10,7 @@ import { EventListPanel } from '../../features/event-list/EventListPanel'
 import { PrListPanel } from '../../features/pr-list/PrListPanel'
 import { DesktopNotificationBanner } from '../../features/status/DesktopNotificationBanner'
 import { IngestStatusBanner } from '../../features/status/IngestStatusBanner'
+import { UpdateBanner } from '../../features/status/UpdateBanner'
 import { selectIngestNotice } from '../../features/status/ingest-notice'
 import { useT } from '../../i18n'
 import { useInvoke, useMainSnapshot } from '../../main-store/use-main-store'
@@ -120,6 +121,7 @@ export function MainPage({
           failedAt={desktopNotification.failedAt}
         />
       )}
+      {appState?.update === undefined ? null : <UpdateBanner update={appState.update} />}
       {layout === 'side_by_side' ? (
         <>
           <div className={styles.toolbar}>{settingsButton}</div>

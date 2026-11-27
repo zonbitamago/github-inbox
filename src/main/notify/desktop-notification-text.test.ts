@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GitHubEvent, Language } from '../../shared/domain'
-import { desktopNotificationText } from './desktop-notification-text'
+import { desktopNotificationText, testDesktopNotificationText } from './desktop-notification-text'
 
 function event(change: Partial<GitHubEvent> = {}): GitHubEvent {
   return {
@@ -82,4 +82,13 @@ describe('デスクトップ通知の文言（component-backend.md 5.4）', () =
       expect(desktopNotificationText(input, language)).toEqual(expected)
     },
   )
+})
+
+describe('試しのデスクトップ通知の文言（F-36 (4)）', () => {
+  it.each([
+    ['ja', { title: 'github-inbox', body: '試しのデスクトップ通知です。' }],
+    ['en', { title: 'github-inbox', body: 'This is a test desktop notification.' }],
+  ] satisfies [Language, { title: string; body: string }][])('%s', (language, expected) => {
+    expect(testDesktopNotificationText(language)).toEqual(expected)
+  })
 })

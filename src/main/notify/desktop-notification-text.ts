@@ -57,3 +57,13 @@ export function desktopNotificationText(
     body: `${event.actor.login}: ${event.target.title}`,
   }
 }
+
+/** 使い始めの案内の手順4と設定の画面で出す、試しのデスクトップ通知（F-36 (4)、D-033）。画面の文言と揃える */
+const TEST_TEXT: Record<Language, DesktopNotificationText> = {
+  ja: { title: 'github-inbox', body: '試しのデスクトップ通知です。' },
+  en: { title: 'github-inbox', body: 'This is a test desktop notification.' },
+}
+
+export function testDesktopNotificationText(language: Language): DesktopNotificationText {
+  return TEST_TEXT[language]
+}

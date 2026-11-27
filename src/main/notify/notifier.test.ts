@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS, type GitHubEvent, type Settings } from '../../shared/
 import type { AppState } from '../../shared/ipc-contract'
 import {
   DesktopNotifier,
+  TEST_WAIT_MS,
   type DesktopNotificationEvent,
   type DesktopNotificationHandle,
 } from './notifier'
@@ -55,6 +56,8 @@ function setup(
   const created: FakeHandle[] = []
   const failures: AppState['desktopNotification'][] = []
   const focused: string[] = []
+  const waits: { callback: () => void; delayMs: number; cancelled: boolean }[] = []
+  let broughtToFront = 0
   const logger = createMemoryLogger()
   const holder = { now: NOW }
   const notifier = new DesktopNotifier({
@@ -70,8 +73,27 @@ function setup(
     logger,
     publishFailure: (view) => failures.push(view),
     focusEvent: (eventId) => focused.push(eventId),
+    bringToFront: () => {
+      broughtToFront += 1
+    },
+    schedule: (callback, delayMs) => {
+      const wait = { callback, delayMs, cancelled: false }
+      waits.push(wait)
+      return () => {
+        wait.cancelled = true
+      }
+    },
   })
-  return { notifier, created, failures, focused, logger, holder }
+  return {
+    notifier,
+    created,
+    failures,
+    focused,
+    logger,
+    holder,
+    waits,
+    broughtToFront: () => broughtToFront,
+  }
 }
 
 const recent = event('IC_2', '2026-01-31T11:58:00Z')
@@ -191,5 +213,80 @@ describe('出せなかったことの知らせ（N-09、Q-07、AC-38）', () => 
     const { notifier, failures } = setup({ supported: false })
     notifier.notifyLive([event('IC_OLD', '2026-01-31T11:00:00Z')])
     expect(failures).toEqual([])
+  })
+})
+
+// F-36 (4)、N-09、D-033。ipc-contract.md 2. の onboarding:sendTestNotification
+describe('試しのデスクトップ通知', () => {
+  it('設定の言語で1件出し、OS が受け付けたら shown を返す', async () => {
+    const { notifier, created, waits, logger } = setup({
+      settings: { ...DEFAULT_SETTINGS, language: 'en' },
+    })
+    const outcome = notifier.sendTest()
+    expect(created.map((handle) => [handle.content, handle.shown])).toEqual([
+      [{ title: 'github-inbox', body: 'This is a test desktop notification.' }, true],
+    ])
+    expect(waits.map((wait) => wait.delayMs)).toEqual([TEST_WAIT_MS])
+
+    created[0]?.emit('show')
+    await expect(outcome).resolves.toBe('shown')
+    expect(waits[0]?.cancelled).toBe(true)
+    expect(logger.entries).toContainEqual({
+      level: 'info',
+      kind: 'notify.test',
+      fields: { outcome: 'shown' },
+    })
+  })
+
+  it('5秒のうちに出た・失敗したが分からなければ unknown を返す', async () => {
+    const { notifier, waits } = setup()
+    const outcome = notifier.sendTest()
+    waits[0]?.callback()
+    await expect(outcome).resolves.toBe('unknown')
+  })
+
+  it('OS が断ったら failed を返し、出来事のときと同じく知らせる', async () => {
+    const { notifier, created, failures } = setup({ outsideApplicationsFolder: true })
+    const outcome = notifier.sendTest()
+    created[0]?.emit('failed')
+    await expect(outcome).resolves.toBe('failed')
+    expect(failures).toEqual([
+      { failure: 'outside_applications_folder', failedAt: NOW.toISOString() },
+    ])
+  })
+
+  it('OS がデスクトップ通知に対応していなければ、出さずに failed を返す', async () => {
+    const { notifier, created, failures } = setup({ supported: false })
+    await expect(notifier.sendTest()).resolves.toBe('failed')
+    expect(created).toEqual([])
+    expect(failures).toEqual([{ failure: 'os_rejected', failedAt: NOW.toISOString() }])
+  })
+
+  it('出せたら、前に出せなかったことの知らせを消す', async () => {
+    const { notifier, created, failures } = setup()
+    notifier.notifyLive([recent])
+    created[0]?.emit('failed')
+    const outcome = notifier.sendTest()
+    created[1]?.emit('show')
+    await outcome
+    expect(failures).toEqual([{ failure: 'os_rejected', failedAt: NOW.toISOString() }, {}])
+  })
+
+  it('答えた後に届いた知らせでは、答えを変えない', async () => {
+    const { notifier, created, waits } = setup()
+    const outcome = notifier.sendTest()
+    waits[0]?.callback()
+    created[0]?.emit('show')
+    await expect(outcome).resolves.toBe('unknown')
+  })
+
+  it('クリックされたら窓を前に出す（出来事は知らせない）', async () => {
+    const { notifier, created, focused, broughtToFront } = setup()
+    const outcome = notifier.sendTest()
+    created[0]?.emit('show')
+    await outcome
+    created[0]?.emit('click')
+    expect(broughtToFront()).toBe(1)
+    expect(focused).toEqual([])
   })
 })

@@ -21,6 +21,12 @@
   color: var(--color-warning);
 }
 
+.primary {
+  border-color: var(--color-badge-primary-bg);
+  background: var(--color-badge-primary-bg);
+  color: var(--color-badge-primary-fg);
+}
+
 .neutral {
   color: var(--color-text);
 }

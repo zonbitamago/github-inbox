@@ -10,6 +10,50 @@ export const ja = {
   'onboarding.finish.signedInAs': 'サインインしたアカウント',
   'onboarding.finish.start': '使い始める',
   'onboarding.finish.failed': '進めませんでした。もう一度押してください。',
+  'onboarding.step': '手順 {current} / {total}',
+  'onboarding.back': '戻る',
+  'onboarding.next': '次へ',
+  'onboarding.skip': '飛ばす',
+  'onboarding.later': 'あとで',
+  'onboarding.applicationsFolder.title': 'アプリケーションフォルダへ移す',
+  'onboarding.applicationsFolder.body':
+    'このアプリは、アプリケーションフォルダの外から開かれています。このままでは、デスクトップ通知を出せないことがあります。アプリケーションフォルダに移して、開き直してください。',
+  'onboarding.applicationsFolder.laterNote':
+    '「あとで」を選んだときも、デスクトップ通知を出せなかったら、画面の上に知らせが出ます。',
+  'onboarding.signIn.title': 'GitHub でサインイン',
+  'onboarding.githubSettings.title': 'GitHub の通知設定を確かめる',
+  'onboarding.githubSettings.intro':
+    'このアプリは、GitHub の通知から出来事を作ります。GitHub の通知設定が次のようになっているか確かめてください。',
+  'onboarding.githubSettings.participating':
+    '「Participating, @mentions and custom」を「on GitHub」にする（参加している会話とメンション）',
+  'onboarding.githubSettings.actions':
+    '「Actions」を「on GitHub」にする（メールだけだと、CI の結果が届きません）',
+  'onboarding.githubSettings.failedOnly':
+    '「Actions」の「Only notify for failed workflows」をオフにする（オンだと、成功した CI の結果が届きません）',
+  'onboarding.githubSettings.open': 'GitHub の通知設定を開く',
+  'onboarding.githubSettings.openFailed':
+    'GitHub のページを開けませんでした。もう一度押してください。',
+  'onboarding.desktopNotification.title': '試しのデスクトップ通知',
+  'onboarding.desktopNotification.intro': 'デスクトップ通知が出るか、試しに1件出して確かめます。',
+  'applicationsFolder.move': 'アプリケーションフォルダに移して開き直す',
+  'applicationsFolder.moveFailed':
+    'アプリケーションフォルダに移せませんでした。Finder で github-inbox をアプリケーションフォルダにドラッグしてから、開き直してください。',
+  'desktopNotificationCheck.send': '試しのデスクトップ通知を出す',
+  'desktopNotificationCheck.sendAgain': 'もう一度出す',
+  'desktopNotificationCheck.sending': '出しています',
+  'desktopNotificationCheck.sendFailed':
+    '試しのデスクトップ通知を出せませんでした。もう一度押してください。',
+  'desktopNotificationCheck.question': 'デスクトップ通知が表示されましたか？',
+  'desktopNotificationCheck.shown': '表示された',
+  'desktopNotificationCheck.notShown': '表示されなかった',
+  'desktopNotificationCheck.confirmed': 'デスクトップ通知が出ることを確かめました。',
+  'desktopNotificationCheck.fix.osSettings':
+    'OS の通知の設定で、github-inbox の通知を許可してください。集中モードがオンのときも表示されません。直したら、もう一度出して確かめてください。',
+  'desktopNotificationCheck.fix.applicationsFolder':
+    'アプリケーションフォルダの外から開いているため、デスクトップ通知を出せません。アプリケーションフォルダに移して、開き直してください。',
+  'update.available': '新しい版 {version} が出ています。',
+  'update.open': 'ダウンロードのページを開く',
+  'update.openFailed': 'ダウンロードのページを開けませんでした。もう一度押してください。',
   'auth.signIn.title': 'GitHub でサインイン',
   'auth.signIn.again': 'GitHub にサインインし直す',
   'auth.signIn.back': '出来事の一覧に戻る',
@@ -73,6 +117,13 @@ export const ja = {
   'settings.loginItem.title': '自動起動',
   'settings.loginItem.label': 'ログインしたときに立ち上げる',
   'settings.loginItem.failed': '自動起動を切り替えられませんでした。もう一度押してください。',
+  'settings.desktopNotificationHelp.title': 'デスクトップ通知が出ないとき',
+  'settings.desktopNotificationHelp.description':
+    '試しにデスクトップ通知を1件出して、表示されるか確かめられます。',
+  'settings.onboarding.title': '使い始めの案内',
+  'settings.onboarding.description':
+    'GitHub の通知設定の確かめ方や、試しのデスクトップ通知をもう一度見られます。',
+  'settings.onboarding.restart': '使い始めの案内をもう一度',
   'settings.account.title': 'アカウント',
   'settings.account.signedInAs': 'サインインしているアカウント',
   'settings.account.signOut': 'サインアウト',

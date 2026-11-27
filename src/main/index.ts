@@ -1,9 +1,11 @@
 // 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み、
-// S4 はデスクトップ通知、S5 は PR の一覧、S6a は設定の変更・自動起動・リンクのコピー。
+// S4 はデスクトップ通知、S5 は PR の一覧、S6a は設定の変更・自動起動・リンクのコピー、
+// S6b はアプリケーションフォルダへの移動・試しのデスクトップ通知・新しい版の確認。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
+import { createApplicationsFolderMover } from './app/applications-folder'
 import { AppStateHolder } from './app/app-state'
 import {
   createDesktopNotificationSettingsOpener,
@@ -12,11 +14,13 @@ import {
 } from './app/external'
 import { createLoginItemSetter } from './app/login-item'
 import { createSettingsUpdater } from './app/settings-change'
+import { UpdateChecker } from './app/update-check'
 import { applyApplicationMenu, createMainWindow } from './app/window'
 import { AuthService } from './auth/auth-service'
 import { TokenStore } from './auth/token-store'
 import { createGitHubClient } from './github/client'
 import { RateBudget } from './github/rate-budget'
+import { fetchLatestRelease } from './github/releases'
 import { fetchViewer } from './github/viewer'
 import { IngestService } from './ingest/ingest-service'
 import type { Timer } from './ingest/scheduler'
@@ -95,6 +99,13 @@ async function start(): Promise<void> {
       now,
     })
 
+  const timer: Timer = {
+    schedule: (callback, delayMs) => {
+      const handle = setTimeout(callback, delayMs)
+      return () => clearTimeout(handle)
+    },
+  }
+
   // デスクトップ通知（component-backend.md 5.4）。クリックされたら窓を前に出し、画面にその出来事を知らせる（F-08）
   const notifier = new DesktopNotifier({
     isSupported: isDesktopNotificationSupported,
@@ -108,14 +119,10 @@ async function start(): Promise<void> {
       bringMainWindowToFront()
       pusher.send('ui:focusEvent', { eventId })
     },
+    // 試しのデスクトップ通知（F-36 (4)）のクリックでは、窓を前に出すだけ
+    bringToFront: bringMainWindowToFront,
+    schedule: (callback, delayMs) => timer.schedule(callback, delayMs),
   })
-
-  const timer: Timer = {
-    schedule: (callback, delayMs) => {
-      const handle = setTimeout(callback, delayMs)
-      return () => clearTimeout(handle)
-    },
-  }
 
   // 取り込み（component-backend.md 5.2）。トークンは問い合わせのたびに認証から受け取る（I-7）
   const ingest = new IngestService({
@@ -154,6 +161,16 @@ async function start(): Promise<void> {
       .catch((error: unknown) => logger.error('pr_list.unexpected', { error: errorName(error) }))
   }
 
+  // 新しい版の確認（F-31）。サインインしたら確かめ、その後は24時間ごと（トークンが要るため。⑭ S6b）
+  const releasesClient = githubClientFor(() => auth.token())
+  const updateChecker = new UpdateChecker({
+    fetchLatest: () => fetchLatestRelease(releasesClient),
+    currentVersion: version,
+    schedule: (callback, delayMs) => timer.schedule(callback, delayMs),
+    logger,
+    publish: (update) => state.update({ update }),
+  })
+
   // 認証（auth-flow.md）
   const tokenStore = new TokenStore(
     join(userData, 'token.bin'),
@@ -184,14 +201,16 @@ async function start(): Promise<void> {
       prList.clear()
     },
     publish: (view) => state.update({ auth: view.auth, ingest: view.ingest }),
-    // 取り戻しと PR の一覧を同時に始める（component-backend.md 5.1）
+    // 取り戻しと PR の一覧と新しい版の確認を同時に始める（component-backend.md 5.1）
     onSignedIn: (login) => {
       ingest.start(login)
       startPrList(login)
+      void updateChecker.start()
     },
     onSignedOut: () => {
       ingest.stop()
       prList.stop()
+      updateChecker.stop()
     },
     timer,
     now,
@@ -247,6 +266,19 @@ async function start(): Promise<void> {
       'auth:signOut': () => auth.signOut(),
       'shell:openGitHub': ({ url }) => openGitHub(url),
       'os:openNotificationSettings': createDesktopNotificationSettingsOpener(platform),
+      // アプリケーションフォルダへ移す（component-frontend.md 3. の手順1と、デスクトップ通知の失敗の帯）
+      'onboarding:moveToApplicationsFolder': createApplicationsFolderMover({
+        platform,
+        packaged: app.isPackaged,
+        isInApplicationsFolder: () => app.isInApplicationsFolder(),
+        move: () => app.moveToApplicationsFolder(),
+        logger,
+      }),
+      // 試しのデスクトップ通知（手順4と設定の画面の「デスクトップ通知が出ないとき」。D-033）
+      'onboarding:sendTestNotification': async () => ({
+        ok: true,
+        value: { outcome: await notifier.sendTest() },
+      }),
       // 使い始めの案内を終える（component-frontend.md 3. の手順5）。サインインしてからでないと終えられない
       'onboarding:complete': async () => {
         if (state.get().auth.status !== 'signed_in') {
