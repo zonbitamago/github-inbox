@@ -7,16 +7,11 @@ import { useT } from '../../i18n'
 import type { FocusRequest } from '../../main-store/main-store'
 import { useInvoke } from '../../main-store/use-main-store'
 import { EmptyState } from '../../ui/EmptyState'
+import { searchWords } from '../../ui/highlight'
+import { useNow } from '../../ui/use-now'
 import { EventFilterBar } from './EventFilterBar'
 import { EventRow } from './EventRow'
-import {
-  NO_FILTER,
-  filterEvents,
-  repositoriesOf,
-  searchWords,
-  type EventFilter,
-} from './filter-events'
-import { useNow } from './use-now'
+import { NO_FILTER, filterEvents, repositoriesOf, type EventFilter } from './filter-events'
 import styles from './EventListPanel.module.css'
 
 /** 「5分前」の表し方を進める間隔 */

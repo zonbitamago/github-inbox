@@ -1,5 +1,13 @@
-// 文字で探した語を、行の中で強調する範囲（2026-11-27 依頼者が S3b の確かめで求めた。D-032）。
-// 部品から切り離して単体テストを書く（component-frontend.md 7.）。
+// 文字で探した語を、行の中で強調する範囲（2026-11-27 依頼者が S3b の確かめで求めた。D-032。S5 で PR の一覧にも広げた）。
+// 出来事の一覧と PR の一覧の両方で使うため ui/ に置く。部品から切り離して単体テストを書く（component-frontend.md 7.）。
+
+/** 文字で探す語。空白で区切り、大文字と小文字は区別しない */
+export function searchWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word !== '')
+}
 
 export interface TextPart {
   text: string

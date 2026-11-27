@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRelativeTime } from './format'
+import { formatDays, formatRelativeTime } from './format'
 
 const NOW = new Date('2026-01-31T12:00:00Z')
 
@@ -18,5 +18,16 @@ describe('「5分前」のような表し方', () => {
   ])('%s', (_name, iso, ja, en) => {
     expect(formatRelativeTime(iso, NOW, 'ja')).toBe(ja)
     expect(formatRelativeTime(iso, NOW, 'en')).toBe(en)
+  })
+})
+
+describe('日数の表し方（PR の一覧の期間）', () => {
+  it.each([
+    [1, '1 日', '1 day'],
+    [7, '7 日', '7 days'],
+    [30, '30 日', '30 days'],
+  ])('%i 日', (days, ja, en) => {
+    expect(formatDays(days, 'ja')).toBe(ja)
+    expect(formatDays(days, 'en')).toBe(en)
   })
 })

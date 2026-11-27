@@ -1,0 +1,49 @@
+.tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.list {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.tab {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: transparent;
+  color: var(--color-text-mute);
+  font: var(--font-body);
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: var(--color-surface-hover);
+}
+
+/* 今のタブ（design-system.md 2.1 の color-surface-selected） */
+.selected,
+.selected:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface-selected);
+  color: var(--color-text);
+}
+
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* display を決めているため、hidden の属性だけでは隠れない */
+.panel[hidden] {
+  display: none;
+}

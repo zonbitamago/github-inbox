@@ -1,4 +1,4 @@
-// 探した語に当たる所を強調して出す（D-032）。GitHub から取った文字は文字としてだけ出す（S-05）。
+// 探した語に当たる所を強調して出す（D-032。出来事の一覧と PR の一覧）。GitHub から取った文字は文字としてだけ出す（S-05）。
 import { highlightParts } from './highlight'
 import styles from './HighlightedText.module.css'
 
