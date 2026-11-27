@@ -117,6 +117,9 @@ export function createFakeApi(responses: {
       responses.prList === undefined || responses.prList === null
         ? { ok: false, error: { code: 'not_signed_in' } }
         : { ok: true, value: responses.prList },
+    'settings:update': { ok: true, value: responses.state.settings },
+    'loginItem:set': { ok: true, value: { enabled: !responses.state.loginItem.enabled } },
+    'clipboard:copyLinks': { ok: true, value: { count: 0 } },
     'auth:submitPat': { ok: true, value: { login: 'alice' } },
     'auth:continueAfterKeychainNotice': OK_VOID,
     'auth:signOut': OK_VOID,

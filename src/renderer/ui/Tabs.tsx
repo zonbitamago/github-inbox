@@ -15,12 +15,15 @@ export function Tabs<K extends string>({
   tabs,
   selected,
   onSelect,
+  actions,
 }: {
   /** タブの並び全体の名前（読み上げ用） */
   label: string
   tabs: readonly TabItem<K>[]
   selected: K
   onSelect: (key: K) => void
+  /** タブの並びの右端に置くもの（設定を開くボタンなど）。タブの並びの外に置く */
+  actions?: ReactNode
 }) {
   const id = useId()
   const buttons = useRef(new Map<K, HTMLButtonElement>())
@@ -42,26 +45,29 @@ export function Tabs<K extends string>({
 
   return (
     <div className={styles.tabs}>
-      <div role="tablist" aria-label={label} className={styles.list} onKeyDown={move}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            ref={(element) => {
-              if (element === null) buttons.current.delete(tab.key)
-              else buttons.current.set(tab.key, element)
-            }}
-            type="button"
-            role="tab"
-            id={`${id}-${tab.key}-tab`}
-            aria-selected={tab.key === selected}
-            aria-controls={`${id}-${tab.key}-panel`}
-            tabIndex={tab.key === selected ? 0 : -1}
-            className={tab.key === selected ? `${styles.tab} ${styles.selected}` : styles.tab}
-            onClick={() => onSelect(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className={styles.bar}>
+        <div role="tablist" aria-label={label} className={styles.list} onKeyDown={move}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              ref={(element) => {
+                if (element === null) buttons.current.delete(tab.key)
+                else buttons.current.set(tab.key, element)
+              }}
+              type="button"
+              role="tab"
+              id={`${id}-${tab.key}-tab`}
+              aria-selected={tab.key === selected}
+              aria-controls={`${id}-${tab.key}-panel`}
+              tabIndex={tab.key === selected ? 0 : -1}
+              className={tab.key === selected ? `${styles.tab} ${styles.selected}` : styles.tab}
+              onClick={() => onSelect(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {actions === undefined ? null : <div className={styles.actions}>{actions}</div>}
       </div>
       {tabs.map((tab) => (
         <div

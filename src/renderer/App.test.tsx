@@ -47,6 +47,60 @@ describe('出す画面の選び方（component-frontend.md 1.）', () => {
   ])('%s → %s', (_name, state, expected) => {
     expect(selectPage(state)).toBe(expected)
   })
+
+  it.each([
+    ['設定を開いている', appState(), 'settings'],
+    [
+      '設定を開いていても、サインインしていなければ案内',
+      appState({ auth: { status: 'signed_out' } }),
+      'onboarding',
+    ],
+    [
+      '設定を開いていても、キーチェーンの案内が先',
+      appState({ auth: { status: 'keychain_notice' } }),
+      'keychain_notice',
+    ],
+  ])('%s → %s', (_name, state, expected) => {
+    expect(selectPage(state, true)).toBe(expected)
+  })
+})
+
+// component-frontend.md 1.・4.（設定を開いているかは画面の中だけの状態）
+describe('設定の画面を開く・閉じる', () => {
+  it('「設定」で開き、「戻る」でメインの画面に戻る', async () => {
+    await renderApp(appState())
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    expect(screen.getByRole('heading', { name: '設定', level: 1 })).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: '戻る' }))
+    expect(screen.getByRole('tablist')).toBeTruthy()
+  })
+
+  it('Cmd+, で開き、Esc で戻る', async () => {
+    await renderApp(appState())
+    await userEvent.keyboard('{Meta>},{/Meta}')
+    expect(screen.getByRole('heading', { name: '設定', level: 1 })).toBeTruthy()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('heading', { name: '設定', level: 1 })).toBeNull()
+  })
+
+  it('デスクトップ通知がクリックされたら、設定を閉じて出来事を強調する（F-08）', async () => {
+    const api = await renderApp(appState())
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
+    const emphasized = within(screen.getByRole('list'))
+      .getAllByRole('button')
+      .find((row) => row.getAttribute('aria-current') === 'true')
+    expect(emphasized?.textContent).toContain('ログイン画面')
+  })
+
+  it('設定からサインアウトしたら案内に移り、サインインし直したら設定ではなくメインの画面に戻る', async () => {
+    const api = await renderApp(appState())
+    await userEvent.click(screen.getByRole('button', { name: '設定' }))
+    act(() => api.push('state:changed', appState({ auth: { status: 'signed_out' } })))
+    expect(screen.getByRole('heading', { name: '使い始めの案内' })).toBeTruthy()
+    act(() => api.push('state:changed', appState()))
+    expect(screen.getByRole('tablist')).toBeTruthy()
+  })
 })
 
 describe('画面の殻', () => {
