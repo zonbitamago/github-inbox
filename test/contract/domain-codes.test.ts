@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  APPEARANCES,
   AUTH_METHODS,
   AUTH_STATUSES,
   DEFAULT_SETTINGS,
@@ -53,6 +54,7 @@ describe('domain-model.md 6. の技術上の区分値と、コードが同じ（
     ['DesktopNotificationFailure', DESKTOP_NOTIFICATION_FAILURES],
     ['Layout', LAYOUTS],
     ['Language', LANGUAGES],
+    ['Appearance', APPEARANCES],
     ['AuthMethod', AUTH_METHODS],
     ['AuthStatus', AUTH_STATUSES],
   ])('%s', (typeName, codes) => {

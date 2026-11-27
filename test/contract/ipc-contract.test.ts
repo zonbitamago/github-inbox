@@ -73,6 +73,8 @@ describe('引数の検査（S-08。.strict() で余分な項目も断る）', ()
     [{ lastLaunchedVersion: '1.0.0' }, false],
     [{ desktopNotification: { bots: false } }, false],
     [{ desktopNotification: DEFAULT_SETTINGS.desktopNotification }, true],
+    [{ appearance: 'dark' }, true],
+    [{ appearance: 'auto' }, false],
   ])('設定の一部 %j を受けるか: %s', (patch, expected) => {
     expect(SettingsPatchSchema.safeParse(patch).success).toBe(expected)
   })
