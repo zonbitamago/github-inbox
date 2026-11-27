@@ -1,11 +1,17 @@
 // 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み、
-// S4 はデスクトップ通知、S5 は PR の一覧。
+// S4 はデスクトップ通知、S5 は PR の一覧、S6a は設定の変更・自動起動・リンクのコピー。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
 import { AppStateHolder } from './app/app-state'
-import { createDesktopNotificationSettingsOpener, createGitHubOpener } from './app/external'
+import {
+  createDesktopNotificationSettingsOpener,
+  createGitHubOpener,
+  createLinkCopier,
+} from './app/external'
+import { createLoginItemSetter } from './app/login-item'
+import { createSettingsUpdater } from './app/settings-change'
 import { applyApplicationMenu, createMainWindow } from './app/window'
 import { AuthService } from './auth/auth-service'
 import { TokenStore } from './auth/token-store'
@@ -194,6 +200,25 @@ async function start(): Promise<void> {
   // キーチェーンに触れずに決められる状態（トークンがあるか・キーチェーンの案内が要るか）。窓はまだ無いので知らせは届かない
   state.update(await auth.prepare())
   const openGitHub = createGitHubOpener()
+  // 設定を変える（component-frontend.md 4.）。日数・期間が変わったら一覧を合わせる
+  const updateSettings = createSettingsUpdater({
+    current: () => settingsStore.current(),
+    save: (patch) => settingsStore.update(patch),
+    publish: (saved) => state.update({ settings: saved }),
+    eventDaysChanged: (eventDays) =>
+      pusher.send('events:reset', eventsStore.listForDisplay(eventDays, now())),
+    prPeriodChanged: () => {
+      prList
+        .refresh()
+        .catch((error: unknown) => logger.error('pr_list.unexpected', { error: errorName(error) }))
+    },
+  })
+  // 自動起動（F-25）
+  const setLoginItem = createLoginItemSetter({
+    set: (enabled) => app.setLoginItemSettings({ openAtLogin: enabled }),
+    get: () => app.getLoginItemSettings().openAtLogin,
+    publish: (enabled) => state.update({ loginItemEnabled: enabled }),
+  })
 
   // 開発中だけ開発サーバーを読む（配布物では環境変数を見ない）
   const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
@@ -214,6 +239,9 @@ async function start(): Promise<void> {
       },
       'prs:get': () => Promise.resolve(prList.current()),
       'prs:reload': () => prList.reload(),
+      'settings:update': updateSettings,
+      'loginItem:set': setLoginItem,
+      'clipboard:copyLinks': createLinkCopier(),
       'auth:submitPat': ({ token }) => auth.submitPat(token),
       'auth:continueAfterKeychainNotice': () => auth.continueAfterKeychainNotice(),
       'auth:signOut': () => auth.signOut(),

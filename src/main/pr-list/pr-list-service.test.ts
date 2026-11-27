@@ -208,6 +208,46 @@ describe('取得中にもう一度頼まれたとき（component-backend.md 5.3�
   })
 })
 
+describe('期間を変えたとき（F-16。S6）', () => {
+  it('取得中でも、今の取得を捨てて新しい期間で取り直す', async () => {
+    const { client, pending, answerAll } = deferredClient()
+    let periodDays = 7
+    const logger = createMemoryLogger()
+    const snapshots: PrListSnapshot[] = []
+    const service = new PrListService({
+      client,
+      periodDays: () => periodDays,
+      now: () => NOW,
+      logger,
+      publish: () => undefined,
+      updated: (snapshot) => snapshots.push(snapshot),
+      authFailed: () => undefined,
+    })
+    const old = service.start(VIEWER)
+    periodDays = 30
+    const refreshed = service.refresh()
+    expect(pending.slice(3).map((request) => request.request.variables['q'])).toEqual([
+      expect.stringContaining('updated:>2026-01-01T00:00:00Z'),
+      expect.stringContaining('updated:>2026-01-01T00:00:00Z'),
+      expect.stringContaining('updated:>2026-01-01T00:00:00Z'),
+    ])
+    answerAll()
+
+    const [oldResult, refreshedResult] = await Promise.all([old, refreshed])
+    expect(snapshots.map((snapshot) => snapshot.periodDays)).toEqual([30])
+    expect(oldResult).toEqual(refreshedResult)
+  })
+
+  it('サインインしていなければ取らない', async () => {
+    const { service, client } = setup()
+    await expect(service.refresh()).resolves.toEqual({
+      ok: false,
+      error: { code: 'not_signed_in' },
+    })
+    expect(client.queries).toEqual([])
+  })
+})
+
 describe('止める・消す（auth-flow.md 5.・6.）', () => {
   it('止めても（認証が切れた）、最後に取った一覧は残す。リロードは not_signed_in', async () => {
     const { service, views } = setup()
