@@ -14,6 +14,8 @@
 //     GitHub の通知の subject.latest_comment_url を読み、<名前>.json に記録する（M-9 の出典。CR-004）
 //   node scripts/fixtures/record.ts expand <生の応答を置くフォルダ> <名前> <since> <スレッドの番号（survey の出力の #）>...
 //     選んだスレッドだけを分解し、<名前>.json に記録する
+//   node scripts/fixtures/record.ts releases <生の応答を置くフォルダ>
+//     配布用のリポジトリの最新の版（GET /repos/{owner}/{repo}/releases/latest。github-api.md 6.）を記録する
 //
 // GitHub への問い合わせは gh CLI に任せる（GET と GraphQL の query だけ。書き込みはしない。S-02）。
 import { execFileSync } from 'node:child_process'
@@ -575,6 +577,17 @@ function latestComment(dir: string, name: string | undefined, index: string | un
   console.log(`${name}: status ${recorded.response.status}、指す先 ${kind}`)
 }
 
+// ---- releases（新しい版。github-api.md 6.、F-31） ----
+
+/** 配布用のリポジトリ（build-and-release.md 1.）。公開しているアプリそのものの名前で、実データではない */
+const RELEASES_REPOSITORY = 'zonbitamago/github-inbox'
+
+function recordReleases(dir: string): void {
+  const recorded = ghGet(`/repos/${RELEASES_REPOSITORY}/releases/latest`)
+  save(dir, 'releases-latest', recorded)
+  console.log(`releases-latest: status ${recorded.response.status}`)
+}
+
 function main(): void {
   const [command, dirArg, ...rest] = process.argv.slice(2)
   const dir = outDirFrom(dirArg)
@@ -588,6 +601,8 @@ function main(): void {
     recordCi(dir, rest[0])
   } else if (command === 'latest-comment') {
     latestComment(dir, rest[0], rest[1])
+  } else if (command === 'releases') {
+    recordReleases(dir)
   } else {
     throw new SafeError('survey か expand を指定する')
   }
