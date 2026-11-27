@@ -4,6 +4,7 @@ import type {
   AppState,
   GithubInboxApi,
   InvokeChannel,
+  InvokeResult,
   PushChannel,
   PushPayload,
 } from '../../src/shared/ipc-contract'
@@ -57,21 +58,43 @@ export interface FakeApi extends GithubInboxApi {
   push<C extends PushChannel>(channel: C, payload: PushPayload<C>): void
   /** 呼ばれた順（受け取りの始めと依頼） */
   calls: string[]
+  /** 頼まれたチャンネルと引数（受け取りの始めは含まない） */
+  invocations: { channel: InvokeChannel; args: unknown }[]
   listeners(channel: PushChannel): number
 }
 
-export function createFakeApi(responses: { state: AppState; events?: GitHubEvent[] }): FakeApi {
+/** 答え。Promise を渡すと、テストの中で答えるときを決められる */
+export type FakeAnswers = { [C in InvokeChannel]?: InvokeResult<C> | Promise<InvokeResult<C>> }
+
+const OK_VOID = { ok: true, value: undefined } as const
+
+export function createFakeApi(responses: {
+  state: AppState
+  events?: GitHubEvent[]
+  answers?: FakeAnswers
+}): FakeApi {
   const listeners = new Map<string, Set<(payload: unknown) => void>>()
   const calls: string[] = []
+  const invocations: FakeApi['invocations'] = []
   const answer: Partial<Record<InvokeChannel, unknown>> = {
     'app:getState': responses.state,
     'events:list': responses.events ?? [],
     'prs:get': null,
+    'auth:submitPat': { ok: true, value: { login: 'alice' } },
+    'auth:continueAfterKeychainNotice': OK_VOID,
+    'auth:signOut': OK_VOID,
+    'shell:openGitHub': OK_VOID,
+    'onboarding:complete': OK_VOID,
+    ...responses.answers,
   }
   return {
     calls,
-    invoke: ((channel: InvokeChannel) => {
+    invocations,
+    invoke: ((channel: InvokeChannel, args?: unknown) => {
       calls.push(`invoke:${channel}`)
+      if (channel !== 'app:getState' && channel !== 'events:list' && channel !== 'prs:get') {
+        invocations.push({ channel, args })
+      }
       return Promise.resolve(answer[channel])
     }) as GithubInboxApi['invoke'],
     on: ((channel: PushChannel, listener: (payload: unknown) => void) => {

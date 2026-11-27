@@ -21,6 +21,8 @@ export interface MainStore {
   getSnapshot: () => MainSnapshot
   start: () => Promise<void>
   stop: () => void
+  /** メインに頼む（ipc-contract.md 2.）。結果は戻り値か、push で届く状態で出す（component-frontend.md 4.） */
+  invoke: GithubInboxApi['invoke']
 }
 
 const newestFirst = (events: GitHubEvent[]) =>
@@ -98,5 +100,6 @@ export function createMainStore(api: GithubInboxApi): MainStore {
     stop() {
       for (const unsubscribe of unsubscribes.splice(0)) unsubscribe()
     },
+    invoke: (...args) => api.invoke(...args),
   }
 }
