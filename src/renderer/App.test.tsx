@@ -1,14 +1,27 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { act } from 'react'
-import { describe, expect, it } from 'vitest'
-import { appState, createFakeApi, githubEvent } from '../../test/support/fake-github-inbox-api'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  appState,
+  createFakeApi,
+  githubEvent,
+  type FakeAnswers,
+} from '../../test/support/fake-github-inbox-api'
 import type { AppState } from '../shared/ipc-contract'
 import { App, selectPage } from './App'
 import { createMainStore } from './main-store/main-store'
 import { MainStoreProvider } from './main-store/use-main-store'
 
-async function renderApp(state: AppState, events = [githubEvent('IC_1', '2026-01-02T03:04:00Z')]) {
-  const api = createFakeApi({ state, events })
+// 描いた画面をテストごとに片付ける（vitest の globals を使っていないため、自動では片付かない）
+afterEach(cleanup)
+
+async function renderApp(
+  state: AppState,
+  events = [githubEvent('IC_1', '2026-01-02T03:04:00Z')],
+  answers: FakeAnswers = {},
+) {
+  const api = createFakeApi({ state, events, answers })
   const store = createMainStore(api)
   render(
     <MainStoreProvider store={store}>
@@ -124,5 +137,90 @@ describe('画面の殻', () => {
     await renderApp(appState({}, { language: 'en' }))
     expect(screen.getByRole('heading', { name: 'Events' })).toBeTruthy()
     expect(screen.getByText('Comment')).toBeTruthy()
+  })
+})
+
+describe('認証の画面（S2。component-frontend.md 1.・3.、auth-flow.md 4.）', () => {
+  it('キーチェーンの案内で「許可」を押すよう出し、「続ける」で読み出しを頼む（F-36 (5)）', async () => {
+    const api = await renderApp(appState({ auth: { status: 'keychain_notice' } }))
+    expect(screen.getByRole('heading', { name: '新しい版を入れました' })).toBeTruthy()
+    expect(screen.getByText(/「許可」を押してください/)).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: '続ける' }))
+    expect(api.invocations).toEqual([
+      { channel: 'auth:continueAfterKeychainNotice', args: undefined },
+    ])
+  })
+
+  it('キーチェーンの案内で続けられなければ、その旨を出す', async () => {
+    await renderApp(appState({ auth: { status: 'keychain_notice' } }), [], {
+      'auth:continueAfterKeychainNotice': { ok: false, error: { code: 'internal' } },
+    })
+    await userEvent.click(screen.getByRole('button', { name: '続ける' }))
+    expect(screen.getByRole('alert').textContent).toBe(
+      '続けられませんでした。もう一度押してください。',
+    )
+  })
+
+  it('サインインし直す画面では、サインインの手順だけを出す（DR-18）', async () => {
+    await renderApp(appState({ auth: { status: 'signing_in' } }))
+    expect(screen.getByRole('heading', { name: 'GitHub にサインインし直す' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '使い始めの案内' })).toBeNull()
+  })
+
+  it('サインインしていなければ、使い始めの案内の手順2（サインイン）を出す', async () => {
+    await renderApp(appState({ auth: { status: 'signed_out' }, onboardingRequired: true }))
+    expect(screen.getByRole('heading', { name: 'GitHub でサインイン' })).toBeTruthy()
+  })
+
+  it('サインインできたら、届いた状態で手順5（終わり）に切り替わる', async () => {
+    const api = await renderApp(
+      appState({ auth: { status: 'signed_out' }, onboardingRequired: true }),
+    )
+    act(() =>
+      api.push(
+        'state:changed',
+        appState({
+          auth: { status: 'signed_in', login: 'alice', method: 'pat' },
+          onboardingRequired: true,
+        }),
+      ),
+    )
+    expect(screen.getByRole('heading', { name: '準備ができました' })).toBeTruthy()
+    expect(screen.getByText('alice')).toBeTruthy()
+  })
+
+  it('手順5の「使い始める」で、使い始めの案内を終えるよう頼む', async () => {
+    const api = await renderApp(
+      appState({
+        auth: { status: 'signed_in', login: 'alice', method: 'pat' },
+        onboardingRequired: true,
+      }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: '使い始める' }))
+    expect(api.invocations).toEqual([{ channel: 'onboarding:complete', args: undefined }])
+  })
+
+  it('案内を終えられなければ、その旨を出す', async () => {
+    await renderApp(
+      appState({
+        auth: { status: 'signed_in', login: 'alice', method: 'pat' },
+        onboardingRequired: true,
+      }),
+      [],
+      { 'onboarding:complete': { ok: false, error: { code: 'not_signed_in' } } },
+    )
+    await userEvent.click(screen.getByRole('button', { name: '使い始める' }))
+    expect(screen.getByRole('alert').textContent).toBe('進めませんでした。もう一度押してください。')
+  })
+
+  it('案内を終えたら、届いた状態でメインの画面に切り替わる', async () => {
+    const api = await renderApp(
+      appState({
+        auth: { status: 'signed_in', login: 'alice', method: 'pat' },
+        onboardingRequired: true,
+      }),
+    )
+    act(() => api.push('state:changed', appState()))
+    expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
   })
 })

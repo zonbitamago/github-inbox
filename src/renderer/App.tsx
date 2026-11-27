@@ -2,6 +2,7 @@
 import type { AppState } from '../shared/ipc-contract'
 import { useT } from './i18n'
 import { useMainSnapshot } from './main-store/use-main-store'
+import { KeychainNoticePage } from './pages/keychain-notice/KeychainNoticePage'
 import { MainPage } from './pages/main/MainPage'
 import { OnboardingPage } from './pages/onboarding/OnboardingPage'
 import styles from './App.module.css'
@@ -22,10 +23,13 @@ export function App() {
   if (loadFailed) return <p className={styles.message}>{t('common.loadFailed')}</p>
   if (!loaded || appState === null) return <p className={styles.message}>{t('common.loading')}</p>
   switch (selectPage(appState)) {
+    case 'keychain_notice':
+      return <KeychainNoticePage />
+    case 'signing_in':
+      return <OnboardingPage signInOnly />
+    case 'onboarding':
+      return <OnboardingPage />
     case 'main':
       return <MainPage events={events} />
-    default:
-      // キーチェーンの案内とサインインし直す画面は S2 で足す。それまでは使い始めの案内を出す
-      return <OnboardingPage />
   }
 }

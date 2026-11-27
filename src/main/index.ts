@@ -1,11 +1,17 @@
-// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口まで。
-// 認証（S2）・取り込み（S3）・デスクトップ通知（S4）・PR の一覧（S5）は、各スライスで足していく。
+// 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証まで。
+// 取り込み（S3）・デスクトップ通知（S4）・PR の一覧（S5）は、各スライスで足していく。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, ipcMain, type BrowserWindow } from 'electron'
+import { app, ipcMain, safeStorage, type BrowserWindow } from 'electron'
 import { DAY_MS } from './core/constants'
 import { AppStateHolder } from './app/app-state'
+import { createGitHubOpener } from './app/external'
 import { applyApplicationMenu, createMainWindow } from './app/window'
+import { AuthService } from './auth/auth-service'
+import { TokenStore } from './auth/token-store'
+import { createGitHubClient } from './github/client'
+import { RateBudget } from './github/rate-budget'
+import { fetchViewer } from './github/viewer'
 import { createPusher, createSenderCheck, registerInvokeHandlers } from './ipc/handlers'
 import { createLogger } from './log/logger'
 import { EventsStore } from './store/events-store'
@@ -37,14 +43,15 @@ async function start(): Promise<void> {
 
   const pusher = createPusher(() => mainWindow?.webContents ?? null, logger)
   const platform = process.platform === 'win32' ? 'win32' : 'darwin'
+  const version = app.getVersion()
+  // 認証の状態は、窓を開く前に auth.prepare で決める（下）
   const state = new AppStateHolder(
     {
-      version: app.getVersion(),
+      version,
       platform,
       inApplicationsFolder: platform === 'darwin' ? app.isInApplicationsFolder() : null,
       settings,
       loginItemEnabled: app.getLoginItemSettings().openAtLogin,
-      // 認証は S2 で足す。それまでは使い始めの案内を出す
       auth: { status: 'signed_out' },
       ingest: { state: 'signed_out' },
       desktopNotification: {},
@@ -52,6 +59,58 @@ async function start(): Promise<void> {
     },
     (next) => pusher.send('state:changed', next),
   )
+
+  // GitHub への問い合わせ（component-backend.md 6.）。トークンは問い合わせのたびに関数で渡す（I-7）
+  const rateBudget = new RateBudget()
+  const githubClientFor = (getToken: () => string | undefined) =>
+    createGitHubClient({
+      getToken,
+      rateBudget,
+      logger,
+      userAgent: `github-inbox/${version}`,
+      now,
+    })
+
+  // 認証（auth-flow.md）
+  const tokenStore = new TokenStore(
+    join(userData, 'token.bin'),
+    {
+      isAvailable: () => safeStorage.isAsyncEncryptionAvailable(),
+      encrypt: (text) => safeStorage.encryptStringAsync(text),
+      decrypt: async (data) => {
+        const decrypted = await safeStorage.decryptStringAsync(data)
+        return { text: decrypted.result, shouldReEncrypt: decrypted.shouldReEncrypt }
+      },
+    },
+    logger,
+  )
+  const auth = new AuthService({
+    tokenStore,
+    fetchViewer: (token) => fetchViewer(githubClientFor(() => token)),
+    version,
+    platform,
+    lastLaunchedVersion: () => settingsStore.current().lastLaunchedVersion,
+    saveLastLaunchedVersion: async (launched) => {
+      const saved = await settingsStore.update({ lastLaunchedVersion: launched })
+      state.update({ settings: saved })
+    },
+    clearEvents: async () => {
+      await eventsStore.clear()
+      pusher.send('events:reset', [])
+    },
+    publish: (view) => state.update({ auth: view.auth, ingest: view.ingest }),
+    timer: {
+      schedule: (callback, delayMs) => {
+        const timer = setTimeout(callback, delayMs)
+        return () => clearTimeout(timer)
+      },
+    },
+    now,
+    logger,
+  })
+  // キーチェーンに触れずに決められる状態（トークンがあるか・キーチェーンの案内が要るか）。窓はまだ無いので知らせは届かない
+  state.update(await auth.prepare())
+  const openGitHub = createGitHubOpener()
 
   // 開発中だけ開発サーバーを読む（配布物では環境変数を見ない）
   const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
@@ -72,6 +131,21 @@ async function start(): Promise<void> {
       },
       // PR の一覧は S5 で足す
       'prs:get': () => Promise.resolve(null),
+      'auth:submitPat': ({ token }) => auth.submitPat(token),
+      'auth:continueAfterKeychainNotice': () => auth.continueAfterKeychainNotice(),
+      'auth:signOut': () => auth.signOut(),
+      'shell:openGitHub': ({ url }) => openGitHub(url),
+      // 使い始めの案内を終える（component-frontend.md 3. の手順5）。サインインしてからでないと終えられない
+      'onboarding:complete': async () => {
+        if (state.get().auth.status !== 'signed_in') {
+          return { ok: false, error: { code: 'not_signed_in' } } as const
+        }
+        const saved = await settingsStore.update({
+          onboarding: { completedAt: now().toISOString() },
+        })
+        state.update({ settings: saved })
+        return { ok: true, value: undefined }
+      },
     },
   )
 
@@ -80,6 +154,9 @@ async function start(): Promise<void> {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+
+  // トークンを読み出して GET /user で確かめる（版が変わったときは、画面の「続ける」を待つ）
+  auth.resume()
 
   // 24時間ごとに、発生から30日を過ぎた出来事を消す（I-4、component-backend.md 7.）
   setInterval(() => {

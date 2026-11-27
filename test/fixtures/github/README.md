@@ -13,7 +13,7 @@
 | ファイル | API と場面 | 主に使うテスト |
 | --- | --- | --- |
 | `user.json` | `GET /user`。`X-OAuth-Scopes` を含む（gh CLI のトークンのため `gist, read:org, repo, workflow`） | 認証（S2） |
-| `user-teams.json` | `GET /user/teams?per_page=100`（9チーム）。`read:org` を持つトークンでの応答。`repo` と `notifications` だけのトークンで読めるかは未確認（R-03） | M-7 のチームへのメンション |
+| `user-teams.json` | `GET /user/teams?per_page=100`（9チーム）。`read:org` を持つトークンでの応答。`repo` と `notifications` だけの classic PAT でも同じ9件が読めることを、0-5（R-03）で確かめた（2026-11-27。件数だけを比べた） | M-7 のチームへのメンション |
 | `notifications-all.json` | `GET /notifications?all=true&per_page=50`。50件（理由: mention 24・review_requested 15・assign 7・comment 2・author 2。種類: PullRequest 47・Issue 3）。`Link` で次のページあり。`latest_comment_url` が空のものが10件 | 取り込み（S3） |
 | `notifications-not-modified.json` | 同じ問い合わせに `If-None-Match`（前回の ETag）を付けたときの 304（CR-003） | 取り込み（S3） |
 | `graphql-expand-own-prs.json` | 分解（github-api.md 3.）。利用者が作った PR 2件（open 1・merged 1）。返信だけのレビュー（計6件）、bot の発言、自分の PR での `@alice`、利用者自身の操作 | M-0・M-4・M-5・M-6、bot |
@@ -35,4 +35,4 @@
 | M-9（理由が `mention` なのに、本文に `@利用者` が無い） | 出典（最新のコメント）の応答は記録した。分解の応答（M-9 に当たるスレッドのもの）は記録していないため、テストで書き換える |
 | 取り消されたレビュー（DISMISSED） | 記録に無い。テストで書き換える（CR-005） |
 | `reviews` が50件を超えて前へたどる場面（`hasPreviousPage`） | 依頼者のデータにはあった（30日分で 10スレッド）が、記録はしていない。必要ならテストで書き換える |
-| `repo` と `notifications` だけのトークンでの `/user/teams` | 0-5（R-03）で確かめる |
+| `repo` と `notifications` だけのトークンでの `/user/teams` | 0-5（R-03）で、読めることを件数で確かめた（2026-11-27）。応答は記録していない（`user-teams.json` と同じ形のため） |
