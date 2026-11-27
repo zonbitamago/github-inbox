@@ -1,10 +1,16 @@
 // 画面のテストで使う、preload の window.githubInbox の偽物
-import { DEFAULT_SETTINGS, type GitHubEvent, type Settings } from '../../src/shared/domain'
+import {
+  DEFAULT_SETTINGS,
+  type GitHubEvent,
+  type PullRequestItem,
+  type Settings,
+} from '../../src/shared/domain'
 import type {
   AppState,
   GithubInboxApi,
   InvokeChannel,
   InvokeResult,
+  PrListSnapshot,
   PushChannel,
   PushPayload,
 } from '../../src/shared/ipc-contract'
@@ -53,6 +59,32 @@ export function githubEvent(
   }
 }
 
+export function pullRequestItem(
+  id: string,
+  updatedAt: string,
+  change: Partial<PullRequestItem> = {},
+): PullRequestItem {
+  return {
+    id,
+    repository: 'example-org/app',
+    number: 101,
+    title: 'ログイン画面の文言を直す',
+    url: 'https://github.com/example-org/app/pull/101',
+    state: 'open',
+    author: { login: 'bob', isBot: false },
+    updatedAt,
+    waitingReasons: [],
+    ...change,
+  }
+}
+
+export function prListSnapshot(
+  items: PullRequestItem[],
+  change: Partial<PrListSnapshot> = {},
+): PrListSnapshot {
+  return { items, periodDays: 7, fetchedAt: '2026-01-31T00:00:00Z', ...change }
+}
+
 export interface FakeApi extends GithubInboxApi {
   /** メインからの知らせを送ったことにする */
   push<C extends PushChannel>(channel: C, payload: PushPayload<C>): void
@@ -71,6 +103,7 @@ const OK_VOID = { ok: true, value: undefined } as const
 export function createFakeApi(responses: {
   state: AppState
   events?: GitHubEvent[]
+  prList?: PrListSnapshot | null
   answers?: FakeAnswers
 }): FakeApi {
   const listeners = new Map<string, Set<(payload: unknown) => void>>()
@@ -79,7 +112,11 @@ export function createFakeApi(responses: {
   const answer: Partial<Record<InvokeChannel, unknown>> = {
     'app:getState': responses.state,
     'events:list': responses.events ?? [],
-    'prs:get': null,
+    'prs:get': responses.prList ?? null,
+    'prs:reload':
+      responses.prList === undefined || responses.prList === null
+        ? { ok: false, error: { code: 'not_signed_in' } }
+        : { ok: true, value: responses.prList },
     'auth:submitPat': { ok: true, value: { login: 'alice' } },
     'auth:continueAfterKeychainNotice': OK_VOID,
     'auth:signOut': OK_VOID,

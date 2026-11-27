@@ -1,5 +1,6 @@
 // 出来事の一覧の絞り込み（component-frontend.md 2.2 の filterEvents、F-13、AC-16）。部品から切り離して単体テストを書く（7.）。
 import type { EventType, GitHubEvent } from '../../../shared/domain'
+import { searchWords } from '../../ui/highlight'
 
 export interface EventFilter {
   /** 空なら絞らない。空白で区切った語を、すべて含む出来事だけを残す（大文字と小文字は区別しない） */
@@ -20,14 +21,6 @@ export function isFiltering(filter: EventFilter): boolean {
 export function repositoryLabel(event: GitHubEvent): string {
   const number = event.target.number === undefined ? '' : ` #${event.target.number}`
   return `${event.target.repository}${number}`
-}
-
-/** 文字で探す語。空白で区切り、大文字と小文字は区別しない */
-export function searchWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word !== '')
 }
 
 /** 文字で探す対象: 対象のタイトル・リポジトリと番号・誰が・抜粋・CI の結果（GitHub から取った文字だけ） */

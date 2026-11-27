@@ -6,6 +6,8 @@ import {
   appState,
   createFakeApi,
   githubEvent,
+  prListSnapshot,
+  pullRequestItem,
   type FakeAnswers,
 } from '../../../../test/support/fake-github-inbox-api'
 import type { AppState } from '../../../shared/ipc-contract'
@@ -16,13 +18,17 @@ import { MainPage } from './MainPage'
 afterEach(cleanup)
 
 const events = [githubEvent('IC_1', '2026-01-02T03:04:00Z')]
+const prList = prListSnapshot([
+  pullRequestItem('PR_1', '2026-01-02T03:00:00Z', { title: 'レビューを頼まれた PR' }),
+  pullRequestItem('PR_2', '2026-01-02T02:00:00Z', { title: 'マージした PR', state: 'merged' }),
+])
 const AUTH_FAILED = appState({
   auth: { status: 'auth_failed', login: 'alice', method: 'pat' },
   ingest: { state: 'auth_failed', lastSuccessAt: '2026-01-02T03:00:00Z' },
 })
 
 async function renderPage(state: AppState, answers: FakeAnswers = {}) {
-  const api = createFakeApi({ state, events, answers })
+  const api = createFakeApi({ state, events, prList, answers })
   const store = createMainStore(api)
   render(
     <MainStoreProvider store={store}>
@@ -170,11 +176,64 @@ describe('デスクトップ通知のクリック（F-08）', () => {
     expect(emphasizedRow()?.textContent).toContain('ログイン画面')
   })
 
+  it('PR の一覧のタブを開いていても、出来事の一覧のタブに戻して強調する', async () => {
+    const api = await renderPage(appState())
+    await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
+    act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
+    expect(screen.getByRole('tab', { name: '出来事' }).getAttribute('aria-selected')).toBe('true')
+    expect(emphasizedRow()?.textContent).toContain('ログイン画面')
+  })
+
   it('サインインし直す画面を開いていても、出来事の一覧に戻して強調する', async () => {
     const api = await renderPage(AUTH_FAILED)
     await userEvent.click(screen.getByRole('button', { name: 'サインインし直す' }))
     act(() => api.push('ui:focusEvent', { eventId: 'IC_1' }))
     expect(screen.getByRole('heading', { name: '出来事' })).toBeTruthy()
     expect(emphasizedRow()?.textContent).toContain('ログイン画面')
+  })
+})
+
+// F-15・F-33、component-frontend.md 2.1（並べ方の既定はタブ。domain-model.md 2.）
+describe('出来事の一覧と PR の一覧のタブ', () => {
+  const panelOf = (name: string) => screen.getByRole('tabpanel', { name })
+
+  it('最初は出来事の一覧を出し、PR のタブを押すと PR の一覧に切り替わる', async () => {
+    await renderPage(appState())
+    expect(screen.getByRole('tab', { name: '出来事' }).getAttribute('aria-selected')).toBe('true')
+    expect(within(panelOf('出来事')).getByRole('heading', { name: '出来事' })).toBeTruthy()
+    expect(screen.queryByRole('tabpanel', { name: 'PR' })).toBeNull()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
+    expect(within(panelOf('PR')).getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.queryByRole('tabpanel', { name: '出来事' })).toBeNull()
+  })
+
+  it('左右の矢印でタブを選び直し、選んだタブにキーボードの位置を移す', async () => {
+    await renderPage(appState())
+    await userEvent.click(screen.getByRole('tab', { name: '出来事' }))
+    await userEvent.keyboard('{ArrowRight}')
+    const prTab = screen.getByRole('tab', { name: 'PR' })
+    expect(prTab.getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(prTab)
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: '出来事' }).getAttribute('aria-selected')).toBe('true')
+    await userEvent.keyboard('{End}')
+    expect(prTab.getAttribute('aria-selected')).toBe('true')
+    await userEvent.keyboard('{Home}')
+    expect(screen.getByRole('tab', { name: '出来事' }).getAttribute('aria-selected')).toBe('true')
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(prTab.getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('タブを切り替えても、それぞれの絞り込みは残る', async () => {
+    await renderPage(appState())
+    await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
+    await userEvent.selectOptions(
+      within(panelOf('PR')).getByRole('combobox', { name: '状態' }),
+      'マージ済み',
+    )
+    await userEvent.click(screen.getByRole('tab', { name: '出来事' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'PR' }))
+    expect(within(panelOf('PR')).getAllByRole('listitem')).toHaveLength(1)
   })
 })

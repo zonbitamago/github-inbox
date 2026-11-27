@@ -17,6 +17,15 @@ export function formatDateTime(iso: string, language: Language): string {
   }).format(new Date(iso))
 }
 
+/** 日数（PR の一覧の期間など）。日本語は「7 日」、英語は「7 days」 */
+export function formatDays(days: number, language: Language): string {
+  return new Intl.NumberFormat(locale(language), {
+    style: 'unit',
+    unit: 'day',
+    unitDisplay: 'long',
+  }).format(days)
+}
+
 /**
  * 「5分前」のような表し方（component-frontend.md 5.「時刻」）。1分未満は「今」、60分未満は分、24時間未満は時間、それより前は日。
  * 時計のずれで少し先の時刻になっていても「今」とする

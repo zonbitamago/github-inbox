@@ -1,5 +1,5 @@
 // 組み立てと立ち上げの順番（component-backend.md 5.1）。S1 は保存・ログ・窓・IPC の受け口、S2 は認証、S3 は取り込み、
-// S4 はデスクトップ通知。PR の一覧（S5）は、そのスライスで足す。
+// S4 はデスクトップ通知、S5 は PR の一覧。
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, ipcMain, powerMonitor, safeStorage, type BrowserWindow } from 'electron'
@@ -21,6 +21,7 @@ import {
   isDesktopNotificationSupported,
 } from './notify/electron-desktop-notification'
 import { DesktopNotifier } from './notify/notifier'
+import { PrListService } from './pr-list/pr-list-service'
 import { EventsStore } from './store/events-store'
 import { SettingsStore } from './store/settings-store'
 
@@ -131,6 +132,22 @@ async function start(): Promise<void> {
     authFailed: () => auth.expire(),
   })
 
+  // PR の一覧（component-backend.md 5.3）。サインインしたとき（立ち上げを含む）とリロードで取る（F-20）
+  const prList = new PrListService({
+    client: githubClientFor(() => auth.token()),
+    periodDays: () => settingsStore.current().prPeriodDays,
+    now,
+    logger,
+    publish: (view) => state.update({ prList: view }),
+    updated: (snapshot) => pusher.send('prs:updated', snapshot),
+    authFailed: () => auth.expire(),
+  })
+  const startPrList = (login: string) => {
+    prList
+      .start(login)
+      .catch((error: unknown) => logger.error('pr_list.unexpected', { error: errorName(error) }))
+  }
+
   // 認証（auth-flow.md）
   const tokenStore = new TokenStore(
     join(userData, 'token.bin'),
@@ -154,13 +171,22 @@ async function start(): Promise<void> {
       const saved = await settingsStore.update({ lastLaunchedVersion: launched })
       state.update({ settings: saved })
     },
+    // 前のアカウントの出来事と PR の一覧を残さない（auth-flow.md 6.）
     clearEvents: async () => {
       await eventsStore.clear()
       pusher.send('events:reset', [])
+      prList.clear()
     },
     publish: (view) => state.update({ auth: view.auth, ingest: view.ingest }),
-    onSignedIn: (login) => ingest.start(login),
-    onSignedOut: () => ingest.stop(),
+    // 取り戻しと PR の一覧を同時に始める（component-backend.md 5.1）
+    onSignedIn: (login) => {
+      ingest.start(login)
+      startPrList(login)
+    },
+    onSignedOut: () => {
+      ingest.stop()
+      prList.stop()
+    },
     timer,
     now,
     logger,
@@ -186,8 +212,8 @@ async function start(): Promise<void> {
         await eventsLoaded
         return eventsStore.listForDisplay(settingsStore.current().eventDays, now())
       },
-      // PR の一覧は S5 で足す
-      'prs:get': () => Promise.resolve(null),
+      'prs:get': () => Promise.resolve(prList.current()),
+      'prs:reload': () => prList.reload(),
       'auth:submitPat': ({ token }) => auth.submitPat(token),
       'auth:continueAfterKeychainNotice': () => auth.continueAfterKeychainNotice(),
       'auth:signOut': () => auth.signOut(),
