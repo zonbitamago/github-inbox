@@ -5,6 +5,7 @@
 - 図: [context-diagram.mmd](context-diagram.mmd)
 - 状態: 技術者が確認済み（2026-11-26）
 - 更新: 2026-11-26 ⑫ の設計レビューを反映。⑧・⑩ で決めた「未定」を直した（DR-11）
+- 更新: 2026-11-27 認証を classic PAT だけにした（CR-007）
 
 github-inbox の境界（誰が使い、何と通信するか）を示す。greenfield のため、既存システムとの差分の観点（設計フレーム 2.4節）は扱わない。
 
@@ -56,7 +57,7 @@ Organization の管理者は登場しない。外部のアプリやトークン�
 
 | 相手 | 本アプリとやり取りすること | 方式の候補（⑧・⑩.3 で確定） | 本アプリへの影響 |
 | --- | --- | --- | --- |
-| GitHub（github.com） | 自分宛ての通知を読み、出来事の中身（コメント・レビュー・CI の結果）と PR の一覧を取る。認証する。**書き込みはしない** | 通知 API（REST、`ETag` による差分の問い合わせ（CR-003）、`X-Poll-Interval` に従う）／検索（PR の一覧。github-prs と同じ `involves:@me`。⑩ で GraphQL にした）／出来事の分解と PR の詳細（GraphQL。ADR-010）／認証は classic のトークン（OAuth App または classic PAT。`notifications`・`repo` スコープ）。ADR-002 | GitHub が止まる・利用制限にかかると受け取れない（N-08 で画面に出す）。各自の GitHub の通知設定が受け取りに影響する（4.） |
+| GitHub（github.com） | 自分宛ての通知を読み、出来事の中身（コメント・レビュー・CI の結果）と PR の一覧を取る。認証する。**書き込みはしない** | 通知 API（REST、`ETag` による差分の問い合わせ（CR-003）、`X-Poll-Interval` に従う）／検索（PR の一覧。github-prs と同じ `involves:@me`。⑩ で GraphQL にした）／出来事の分解と PR の詳細（GraphQL。ADR-010）／認証は利用者が作る classic PAT（`notifications`・`repo` スコープ。OAuth App は CR-007 でやめた）。ADR-002 | GitHub が止まる・利用制限にかかると受け取れない（N-08 で画面に出す）。各自の GitHub の通知設定が受け取りに影響する（4.） |
 | OS（Mac / Windows） | デスクトップ通知を出す、認証情報を安全に保管する、ログイン時に立ち上げる、リンクをクリップボードに入れる、アプリの切り替えの対象になる | 通知センター（Mac）／トースト通知（Windows）、キーチェーン（Mac）／資格情報マネージャー（Windows）、ログイン項目・スタートアップ | 署名しないアプリ（C-03）を OS がどう扱うかは未確認（requirements.md 5. #5） |
 | ブラウザ | GitHub の該当ページを開く | OS の既定のブラウザで URL を開く | なし |
 | 配布場所 | 利用者が配布物をダウンロードする。本アプリが新しい版を確かめる（F-31、S） | GitHub Releases（ADR-005） | 新しい版の確認が止まっても、受け取りには影響しない |

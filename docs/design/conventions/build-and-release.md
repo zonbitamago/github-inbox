@@ -124,4 +124,4 @@ publish:
 | --- | --- |
 | 配布用のリポジトリの持ち主のアカウント（appId に入る） | 決めた（⑬）: `zonbitamago`（1.） |
 | アプリのアイコン | 未定（依頼者が ⑭ までに決める。決まるまでは Electron の既定のアイコン） |
-| OAuth App の登録（auth-flow.md 1.） | 未定（依頼者が ⑬ で登録し、client ID を技術者に渡す。S2 認証の前。build-plan.md 5.） |
+| OAuth App の登録（auth-flow.md 1.） | 使わない（2026-11-27。CR-007・D-031）: 0-4 で依頼者が個人アカウントに「Inbox for GitHub」（CR-006）として登録したが、会社の Organization の OAuth App のアクセス制限のため使わない。client ID はコードに入れない。依頼者が登録を消した（2026-11-27） |

@@ -7,7 +7,7 @@
 | [ADR-001](ADR-001.md) | 自前のサーバーを置かず、各自の PC のアプリが直接 GitHub に問い合わせる | 採用 | ⑦ |
 | [ADR-002](ADR-002.md) | 出来事の起点を GitHub の通知 API にし、classic のトークン（notifications・repo スコープ）で読み取る | 採用 | ⑦ |
 | [ADR-003](ADR-003.md) | Electron + React + TypeScript でデスクトップアプリを作る | 採用 | ⑧ |
-| [ADR-004](ADR-004.md) | 認証は OAuth App のデバイスフローを既定にし、classic PAT の貼り付けも選べる。トークンは safeStorage で暗号化して保存する | 採用 | ⑧ |
+| [ADR-004](ADR-004.md) | 認証は利用者が作る classic PAT の貼り付けにする。トークンは safeStorage で暗号化して保存する | 採用（2026-11-27 改訂。CR-007） | ⑧ |
 | [ADR-005](ADR-005.md) | 個人の public リポジトリで開発し、GitHub Actions でビルドして GitHub Releases で配る | 採用 | ⑧ |
 | [ADR-006](ADR-006.md) | 受け取った出来事と設定を手元に保存し、GitHub からは差分だけ取る | 採用 | ⑧ |
 | [ADR-007](ADR-007.md) | GitHub とトークンはメインプロセスだけが扱い、画面には preload で公開した関数だけを渡す | 採用（AI案） | ⑧ |

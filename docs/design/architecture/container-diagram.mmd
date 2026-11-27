@@ -17,7 +17,6 @@ flowchart TB
 
   subgraph GH["GitHub（github.com）"]
     API["REST / GraphQL API<br/>通知・検索・PR の詳細"]
-    AUTH["OAuth デバイスフロー"]
     REL["Releases<br/>（個人の public リポジトリ）"]
     ACT["GitHub Actions<br/>Mac 用・Windows 用をビルド"]
   end
@@ -26,7 +25,6 @@ flowchart TB
   R <-->|"IPC（契約は ⑩.3）"| P
   P <-->|"IPC"| MP
   MP -->|"HTTPS（読み取り）"| API
-  MP -->|"HTTPS"| AUTH
   MP -.->|"新しい版を確かめる（S）"| REL
   MP --> ST
   MP --> TK

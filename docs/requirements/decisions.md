@@ -278,7 +278,7 @@
 - 日付: 2026-11-26
 - 経緯: ⑪ 規約設計で、配布物の識別子（appId）と design-system.md v0 の出発点を決める必要があった。識別子は名前から作り、配った後に変えると、キーチェーンに保存したトークン・Windows のデスクトップ通知の登録・自動起動の登録が引き継がれない
 - 決定:
-  - アプリの名前は、仮称だった「github-inbox」を正式にする（リポジトリ名・OAuth App の名前・識別子もこの名前から作る。docs/design/conventions/build-and-release.md 1.）
+  - アプリの名前は、仮称だった「github-inbox」を正式にする（リポジトリ名・OAuth App の名前・識別子もこの名前から作る。docs/design/conventions/build-and-release.md 1.。OAuth App の名前は D-030 で「Inbox for GitHub」に変えた）
   - 見た目の方向は「OS になじむ落ち着いた見た目」。色は意味のある所（自分待ちの理由・受け取れていない表示など）だけに使う（docs/design/conventions/design-system.md 1.）。色や大きさの値は AI案の仮の値で、実装中に依頼者が実機を見て決める
   - 技術の判断（開発とビルドは electron-vite、Mac 用は Apple Silicon と Intel の両対応の1つ）は ADR-014 に残した
 - 手戻りタグ: 付けない。⑪ で初めて要った決定のため
@@ -303,4 +303,26 @@
   - GitHub の通知の理由が「メンション」なのに本文に名指しが見つからないとき（M-9）の出来事は、GitHub の通知の「最新のコメント」を読み、その発言者・本文を出す（CR-004。技術者が決めた。利用者に見える違いは、発言者が実際の人になること）
   - レビューのスレッドへの返信も、出来事として受け取る（CR-002。設計の前提どおりだが、問い合わせを直さないと受け取れなかった）
 - 手戻りタグ: 各変更要求（CR-002・004・005）に付けた（ここでは重ねて付けない）
+
+## D-030: OAuth App の名前を「Inbox for GitHub」にする（D-027 の例外）
+
+- 日付: 2026-11-27
+- 経緯: ⑭ の前の作業（build-plan.md 5. の 0-4）で OAuth App を登録しようとしたところ、GitHub が「GitHub」で始まる名前を受け付けず、D-027 のとおり「github-inbox」にできなかった（CR-006）
+- 決定:
+  - OAuth App の名前だけを「Inbox for GitHub」にする。アプリの名前・リポジトリ名・識別子（appId）は「github-inbox」のまま（技術者・依頼者が決めた）
+  - 利用者に見える違い: デバイスフローの認可の画面と、GitHub の設定の「Authorized OAuth Apps」の一覧には「Inbox for GitHub」と出る。サインアウトの画面で GitHub 側での取り消しを勧めるときは、この名前を示す（docs/design/api-contract/auth-flow.md 6.）
+- 手戻りタグ: CR-006 に付けた（ここでは重ねて付けない）
+- その後: D-031 で OAuth App を使わないことにした
+
+## D-031: 認証は利用者が作る classic PAT の貼り付けだけにする（デバイスフローをやめる）
+
+- 日付: 2026-11-27
+- 経緯: ⑭ の前の作業（build-plan.md 5. の 0-5）で、登録した OAuth App のデバイスフローで取ったトークンでは、会社の Organization の非公開リポジトリの GitHub の通知が1件も読めなかった（gh CLI では33件）。認可の画面では、会社の Organization に「Request」（管理者の承認が要る）が出た。classic PAT なら gh CLI と同じだけ読めた。読めないとき GitHub はエラーを返さず結果から黙って除くため、利用者もアプリも気づけない（CR-007）
+- 決定:
+  - 認証は、利用者が作る classic PAT（`repo`・`notifications` スコープ）を貼る方法だけにする。デバイスフロー（OAuth App）はやめる（技術者・依頼者が決めた）
+  - 要件 F-36 (2) の「GitHub の認証（デバイスフロー）の手順」を「GitHub の認証（classic PAT を作って貼る）の手順」に変えた
+  - 要件 C-02（管理者の承認なしで使える範囲で動く）は変えない。会社の管理者に OAuth App の承認を頼む案は採らなかった
+  - 0-4 で登録した OAuth App（Inbox for GitHub）は使わない。依頼者が登録を消した（2026-11-27）
+  - 会社が後で OAuth App を承認したら、ADR を足してデバイスフローを戻せる
+- 手戻りタグ: CR-007 に付けた（ここでは重ねて付けない）
 

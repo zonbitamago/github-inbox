@@ -4,6 +4,7 @@
 - 入力: [context-overview.md](context-overview.md)、[requirements.md](../../requirements/requirements.md)、[acceptance.md](../../requirements/acceptance.md)、ADR-001・002
 - 図: [container-diagram.mmd](container-diagram.mmd)
 - 状態: 技術者が確認済み（2026-11-26）。ADR-003〜007 を採用。⑨ で ADR-008、⑩ で ADR-009〜012 を追加し、中の部品は `docs/design/components/`・`docs/design/api-contract/` に書いた。署名しないアプリの振る舞いは試作で確かめた（[review/spike-unsigned-electron-mac.md](../review/spike-unsigned-electron-mac.md)）
+- 更新: 2026-11-27 デバイスフロー（OAuth App）をやめ、図と表から外した（CR-007）
 
 github-inbox の内側の構成（デプロイ単位と通信）と、主な技術選択を示す。開発は1人 + AI 1体の直列（D-002）なので、分割のしやすさの観点（設計フレーム 2.5節）は軽く扱う（6.）。
 
@@ -29,7 +30,6 @@ flowchart TB
 
   subgraph GH["GitHub（github.com）"]
     API["REST / GraphQL API<br/>通知・検索・PR の詳細"]
-    AUTH["OAuth デバイスフロー"]
     REL["Releases<br/>（個人の public リポジトリ）"]
     ACT["GitHub Actions<br/>Mac 用・Windows 用をビルド"]
   end
@@ -38,7 +38,6 @@ flowchart TB
   R <-->|"IPC（契約は ⑩.3）"| P
   P <-->|"IPC"| MP
   MP -->|"HTTPS（読み取り）"| API
-  MP -->|"HTTPS"| AUTH
   MP -.->|"新しい版を確かめる（S）"| REL
   MP --> ST
   MP --> TK
@@ -70,7 +69,7 @@ flowchart TB
 | --- | --- | --- | --- |
 | 画面 ⇄ メインプロセス | Electron の IPC（preload で公開した関数だけ） | 出来事の一覧・PR の一覧・設定の読み書き・認証の開始・「受け取れていない」状態・リンクのコピー・GitHub を開く | ⑩.3 済み（[ipc-contract.md](../api-contract/ipc-contract.md)） |
 | メインプロセス → GitHub API | HTTPS（GitHub の通知は REST、出来事への分解と PR の一覧は GraphQL。ADR-010）。classic のトークン | 通知（`If-None-Match`（ETag。CR-003）・`X-Poll-Interval` に従う）、検索（`involves:@me`）、PR・issue・コメント・レビュー・チェックの詳細。読み取りだけ | ⑩.3 済み（[github-api.md](../api-contract/github-api.md)） |
-| メインプロセス → GitHub の認証 | HTTPS（OAuth デバイスフロー） | デバイスコードの発行とトークンの受け取り。PAT を貼る場合は通らない（ADR-004） | ⑩.3 済み（[auth-flow.md](../api-contract/auth-flow.md)） |
+| メインプロセス → GitHub の認証 | —（使わない） | デバイスフローは CR-007 でやめた。認証は利用者が作る classic PAT を貼るだけで、GitHub の認証の口にはつながない（ADR-004） | ⑩.3 済み（[auth-flow.md](../api-contract/auth-flow.md)） |
 | メインプロセス → GitHub Releases | HTTPS（公開リポジトリの最新リリースを見る） | 新しい版があるか（F-31、S） | ⑩.3 済み（[github-api.md](../api-contract/github-api.md) 6.） |
 | メインプロセス → OS | Electron の API（Notification、safeStorage、ログイン項目の設定、clipboard、外部ブラウザで開く） | デスクトップ通知・トークンの暗号化・自動起動・コピー・GitHub を開く | ⑩.2 |
 | GitHub Actions → Releases | GitHub Actions のワークフロー | Mac 用・Windows 用の配布物をビルドして置く（ADR-005） | ⑪・⑬ |
@@ -82,7 +81,7 @@ flowchart TB
 | ADR | 決定 | ステータス |
 | --- | --- | --- |
 | [ADR-003](../adr/ADR-003.md) | Electron + React + TypeScript で作る | 採用 |
-| [ADR-004](../adr/ADR-004.md) | 認証は OAuth App のデバイスフローを既定にし、classic PAT の貼り付けも選べる。トークンは safeStorage で暗号化して保存する | 採用 |
+| [ADR-004](../adr/ADR-004.md) | 認証は利用者が作る classic PAT の貼り付けにする。トークンは safeStorage で暗号化して保存する | 採用（2026-11-27 改訂。CR-007） |
 | [ADR-005](../adr/ADR-005.md) | 個人の public リポジトリで開発し、GitHub Actions でビルドして GitHub Releases で配る | 採用 |
 | [ADR-006](../adr/ADR-006.md) | 受け取った出来事と設定を手元に保存し、GitHub からは差分だけ取る | 採用 |
 | [ADR-007](../adr/ADR-007.md) | GitHub とトークンはメインプロセスだけが扱い、画面には preload で公開した関数だけを渡す（AI案） | 採用 |
@@ -101,9 +100,8 @@ flowchart TB
 | 内容 | 扱い |
 | --- | --- |
 | **リポジトリを公開する**ため、コードだけでなく `docs/`（要件定義の記録を含む）も公開される。会社名・Organization 名・社内の事情・実データを書かない。今の `docs/` には会社名や Organization 名は書いていないが、チームの規模や Slack が使えない事情などは書いてある | 最初に push する前に、技術者が `docs/` を見直す（7.） |
-| OAuth App の client ID はコードに入る（デバイスフローでは client secret は使わない）。client ID は公開されても問題ない | ADR-004 |
 | 署名しないアプリの振る舞い | Mac は試作で確かめた: デスクトップ通知・自動起動・safeStorage・切り替え・閉じたら終了は動く。ただしデスクトップ通知はアプリケーションフォルダに置くことが前提で、版を上げるたびにキーチェーンの確認が1回出る（D-022）。**Windows は確かめていない**（⑫ のリスク登録簿に入れる） |
-| OAuth App の認可画面では、`repo` スコープが「プライベートリポジトリの完全な制御」と表示される。アプリは書き込まない | 認証の前にアプリの画面で説明する（F-36） |
+| PAT の作成ページでは、`repo` スコープが「プライベートリポジトリの完全な制御」と表示される。アプリは書き込まない | PAT を作る前にアプリの画面で説明する（F-36） |
 
 ---
 

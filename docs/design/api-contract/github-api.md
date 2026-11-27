@@ -4,6 +4,7 @@
 - 入力: ADR-002・010、[domain-model.md](../components/domain-model.md)、[component-backend.md](../components/component-backend.md)、[non-functional.md](../quality/non-functional.md) Q-01・Q-02・Q-04
 - 状態: 技術者が確認済み（2026-11-26）。REST と GraphQL を併用することは技術者が決めた（ADR-010）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-09・16・17）
+- 更新: 2026-11-27 デバイスフローをやめ、つなぎ先を `api.github.com` だけにした（CR-007）。`/user/teams` が `repo` スコープで読めることを書いた（0-5）
 
 メインプロセスの `github/` だけが GitHub につなぐ（component-backend.md）。ここに書いていない API は使わない。足すときはこの文書を先に直す。
 
@@ -13,7 +14,7 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| つなぎ先 | `https://api.github.com`（REST・GraphQL）、`https://github.com/login/…`（デバイスフローだけ。auth-flow.md）。他には問い合わせない |
+| つなぎ先 | `https://api.github.com`（REST・GraphQL）だけ。他には問い合わせない（デバイスフローの `https://github.com/login/…` は CR-007 で使わなくなった） |
 | ヘッダー | `Authorization: Bearer <トークン>`、`Accept: application/vnd.github+json`、`X-GitHub-Api-Version: 2022-11-28`、`User-Agent: github-inbox/<版>` |
 | 時間切れ | 30秒 |
 | 書き込みをしない（N-06） | REST は GET だけ。GraphQL は `query` だけで、`mutation` は書かない。コードの検査で確かめる（Q-10） |
@@ -169,7 +170,7 @@ fragment IssueExpand on Issue {
 | API | いつ | 使い道 |
 | --- | --- | --- |
 | `GET /user` | 認証したとき、立ち上げたとき | 利用者のユーザー名（自分の操作を除く。M-0）。応答の `X-OAuth-Scopes` に `repo` があるか確かめる（auth-flow.md 3.） |
-| `GET /user/teams?per_page=100` | 立ち上げたとき、24時間ごと | 所属チーム（チームへのメンションの判定。M-7）。`repo` スコープで読めるかは要確認（domain-model.md 10. 要確認 1） |
+| `GET /user/teams?per_page=100` | 立ち上げたとき、24時間ごと | 所属チーム（チームへのメンションの判定。M-7）。`repo` スコープで読める（2026-11-27 に classic PAT で確かめた。domain-model.md 10. 要確認 1） |
 | `GET /repos/{owner}/{repo}/releases/latest` | 立ち上げたとき、24時間ごと | 新しい版（F-31）。owner・repo は配布用の公開リポジトリ（build-and-release.md 1.）。`tag_name`（`v1.2.3`）と今の版を比べる。`html_url` を画面に渡す |
 
 ---

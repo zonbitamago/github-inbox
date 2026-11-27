@@ -4,6 +4,7 @@
 - 入力: [business-data.md](../../requirements/business-data.md)、[requirements.md](../../requirements/requirements.md)、[acceptance.md](../../requirements/acceptance.md)、[non-functional.md](../quality/non-functional.md)、ADR-002・006・009・010
 - 状態: 技術者が確認済み（2026-11-26）。保存の形式（JSON）と問い合わせの方式（REST と GraphQL の併用）は技術者が決めた（ADR-009・010）。「AI案」と書いた項目も技術者がこの内容で確認した。9. は依頼者が確認した（D-026）
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-05・16・17・20。4.2〜4.4 に規則の番号 PT・WR・DN を振った）
+- 更新: 2026-11-27 `AuthMethod` から `device_flow` を外した（CR-007）。10. 要確認 1 を確かめた結果を書いた（0-5）
 
 業務の言葉と区分値は business-data.md が正である。この文書は、それを実装で使う型・判定の決まり・不変条件に直したもの。業務の区分値を新しく作らない。実装の都合で要る区分値は 6. にまとめた（技術者が確認済み）。
 
@@ -272,7 +273,7 @@ business-data.md に無い、実装の都合で要る区分値。業務の言葉
 | デスクトップ通知の失敗の理由 `DesktopNotificationFailure` | `outside_applications_folder`（Mac でアプリケーションフォルダの外から開いている）・`os_rejected`（OS が断った。通知の設定がオフなど） | N-09 の「考えられる理由」 | 画面の上部の表示、案内 (4) |
 | 画面の並べ方 `Layout` | `tabs`・`side_by_side` | F-33 | 設定 |
 | 表示言語 `Language` | `ja`・`en` | F-26 | 設定 |
-| 認証方式 `AuthMethod` | `device_flow`・`pat` | ADR-004 | 認証 |
+| 認証方式 `AuthMethod` | `pat` | ADR-004（2026-11-27 に `device_flow` を外した。CR-007） | 認証 |
 | 認証の状態 `AuthStatus` | `signed_out`・`keychain_notice`（版が変わり、キーチェーンの確認の前の案内を出している）・`signing_in`・`signed_in`・`auth_failed` | F-27・F-36 (5) | 画面の切り替え（component-frontend.md） |
 | IPC の失敗 `IpcErrorCode` | ipc-contract.md 4. | 画面から頼んだ処理の失敗 | IPC |
 
@@ -319,7 +320,7 @@ business-data.md に無い、実装の都合で要る区分値。業務の言葉
 
 | # | 内容 | 確かめなかった場合の扱い | 誰が・いつ |
 | --- | --- | --- | --- |
-| 1 | `notifications`・`repo` スコープのトークンで、所属チームの一覧（REST `GET /user/teams`）とレビュー依頼先のチームの名前を読めるか | 読めなければ、チームへのメンションは「理由が `team_mention` のスレッドで、`@組織/` を含む本文」で判定する。チーム宛てのレビュー依頼は M-2 のとおりスレッドの理由で代える | AI・⑬ の最初 |
+| 1 | `notifications`・`repo` スコープのトークンで、所属チームの一覧（REST `GET /user/teams`）とレビュー依頼先のチームの名前を読めるか | 読めなければ、チームへのメンションは「理由が `team_mention` のスレッドで、`@組織/` を含む本文」で判定する。チーム宛てのレビュー依頼は M-2 のとおりスレッドの理由で代える | AI・⑬ の最初。**確かめた**（2026-11-27。build-plan.md 5. の 0-5）: 所属チームの一覧（REST `GET /user/teams`）は classic PAT（`repo`・`notifications`）で読めた（gh CLI と同じ9件）。レビュー依頼先のチームの名前（GraphQL の `Team`）は `INSUFFICIENT_SCOPES` で読めない（`read:org` が要る）。チーム宛てのレビュー依頼は M-2 のとおりスレッドの理由で代える（github-api.md 3.） |
 | 2 | `ci_activity` のスレッドの応答の形（subject.url が空か、何を指すか）。依頼者のデータには直近で1件も無かった | 本リポジトリ（github-inbox）の CI の実行で届く GitHub の通知とワークフロー実行を、読み取りだけで記録する。CI を動かす push は技術者か、技術者に頼まれた AI が行う。**AI は記録のために GitHub 上で出来事を起こさない**（DR-16） | AI・⑬ でリポジトリと CI を用意した後。**確かめた**（⑬。2026-11-26。github-api.md 4.） |
 | 3 | timelineItems の `since` が、レビューを提出した時刻で絞るか | 重なり（5分）を広げる | **不要になった**（⑬。レビューは `reviews` の一覧で取り、`submittedAt` で自分で絞るため。CR-002） |
 | 4 | 参加中の判定（4.2）の3つで、取りこぼしが無いか | 依頼者の実データで確かめる（⑮） | AI・⑬（記録した応答で、PT-1〜3 の判定と M-8 の出来事を作れることを確かめた）、依頼者・⑮（取りこぼしが無いか） |

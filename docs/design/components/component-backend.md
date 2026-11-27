@@ -4,6 +4,7 @@
 - 入力: [container-overview.md](../architecture/container-overview.md)、[domain-model.md](domain-model.md)、[non-functional.md](../quality/non-functional.md)、[test-strategy.md](../quality/test-strategy.md)、ADR-004・006・007・009・010・011
 - 状態: 技術者が確認済み（2026-11-26）。部品の分け方（機能ごと＋判定は純粋な関数）は技術者が決めた（ADR-011）。「AI案」と書いた項目も技術者がこの内容で確認した
 - 更新: 2026-11-26 ⑫ の設計レビューを反映（DR-02・05・06・07・10・19）
+- 更新: 2026-11-27 デバイスフローをやめ、`github/device-flow-client.ts`・`auth/device-flow.ts` を外した（CR-007）
 
 本アプリにサーバーは無い。この文書の「バックエンド」は、Electron のメインプロセス（GitHub・トークン・保存・OS を扱う側。ADR-007）を指す。
 
@@ -33,7 +34,7 @@ flowchart TB
     ING["ingest<br/>問い合わせの予定・取り戻し"]
     PRL["pr-list<br/>PR の一覧"]
     NOT["notify<br/>デスクトップ通知と失敗の検知"]
-    AUTH["auth<br/>デバイスフロー・PAT・トークンの保管"]
+    AUTH["auth<br/>PAT・トークンの保管"]
     GH["github<br/>REST・GraphQL・利用制限の管理"]
     CORE["core（純粋な関数）<br/>分解・種類・自分待ちの理由<br/>デスクトップ通知の要否・URL の検査"]
     STORE["store<br/>events.json・settings.json"]
@@ -92,7 +93,6 @@ src/
       workflow-runs.ts      CI の結果（REST）
       pr-search.ts          PR の一覧の検索（GraphQL）
       viewer.ts             利用者・所属チーム
-      device-flow-client.ts デバイスフローの問い合わせ（トークンを使わない。auth/device-flow.ts から呼ぶ。DR-19）
       releases.ts           新しい版の確認（F-31）
     ingest/
       scheduler.ts          問い合わせの予定（偽の時計で試せる）
@@ -103,7 +103,6 @@ src/
     notify/
       notifier.ts           Electron の Notification、クリック・失敗の受け取り
     auth/
-      device-flow.ts        デバイスフローの進め方（問い合わせは github/device-flow-client.ts。auth-flow.md）
       pat.ts                PAT の確認
       token-store.ts        safeStorage（非同期版の関数）で暗号化して保存
     store/
@@ -161,7 +160,7 @@ src/
 | ingest | 60秒ごと（`X-Poll-Interval` がより長ければそれ）に GitHub の通知を問い合わせ、変わったスレッドを分解し、保存し、デスクトップ通知を頼む。立ち上げ時は取り戻し（`catchup`）を行う。受け取りの状態を画面に知らせる | 時計・設定 → 保存・画面への知らせ | F-01〜F-07・N-01・N-07・N-08・Q-01・Q-03・Q-06 |
 | pr-list | PR の一覧を取る。検索3本を並べて投げ、まとめて自分待ちの理由を付ける（github-api.md 5.） | 期間 → `PullRequestItem[]` | F-14〜F-18・F-20・Q-02 |
 | notify | デスクトップ通知を出す。クリックされたら窓を前に出し、その出来事を画面に知らせる。`failed` を受けたら理由を判定して画面に知らせる | 出来事 → OS の通知、画面への知らせ | F-07・F-08・N-09・Q-07 |
-| auth | デバイスフローと PAT。トークンを暗号化して保存し、読み出す。版が変わったときはキーチェーンの確認の前に案内を出させる（auth-flow.md 4.） | 利用者の操作 → トークン（`github` にだけ渡す） | F-27・F-28・F-36 (2)(5)・N-05 |
+| auth | PAT（デバイスフローは CR-007 でやめた）。トークンを暗号化して保存し、読み出す。版が変わったときはキーチェーンの確認の前に案内を出させる（auth-flow.md 4.） | 利用者の操作 → トークン（`github` にだけ渡す） | F-27・F-28・F-36 (2)(5)・N-05 |
 | store | `events.json`・`settings.json` の読み書き（ADR-009）。7. | 出来事・記録・設定 ⇄ ファイル | F-06・N-10・Q-09 |
 | app | 窓、自動起動、アプリケーションフォルダへの移動、新しい版の確認、ブラウザで開く、クリップボード | 利用者の操作 → OS | F-08・F-12・F-17・F-23〜F-25・F-31・F-34・F-36 (1)(3) |
 | ipc | 画面からの依頼を受け、入力を検査して各部品に渡す。各部品からの知らせを画面に送る | ipc-contract.md | ADR-007 |

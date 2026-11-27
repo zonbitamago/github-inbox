@@ -73,7 +73,7 @@ export const LANGUAGES = ['ja', 'en'] as const
 export const LanguageSchema = z.enum(LANGUAGES)
 export type Language = z.infer<typeof LanguageSchema>
 
-export const AUTH_METHODS = ['device_flow', 'pat'] as const
+export const AUTH_METHODS = ['pat'] as const
 export const AuthMethodSchema = z.enum(AUTH_METHODS)
 export type AuthMethod = z.infer<typeof AuthMethodSchema>
 

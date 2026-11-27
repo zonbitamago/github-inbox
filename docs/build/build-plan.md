@@ -84,7 +84,7 @@ flowchart LR
 | # | 中身 | 触るフォルダ | 要件 | テスト | 手動・実データ |
 | --- | --- | --- | --- | --- | --- |
 | S1 骨格 | 保存（json-file・events-store・settings-store、30日で消す、壊れたときの退避）、ログ、窓1つ・閉じたら終了・二重に立ち上げない、preload、IPC の受け口（`app:getState` など）、画面の殻（App の切り替え・main-store・一覧の殻）。保存済みの出来事を先に出す（component-backend.md 5.1） | `src/main/{store,log,app/window.ts,ipc}`、`src/preload`、`src/renderer/{App.tsx,main-store,pages/main,ui}` | F-06・F-24・N-10、I-1・I-4・I-5 | 単体（保存・30日）、結合M（壊れたファイル）、結合R（殻） | 立ち上がって、手で置いた架空の `events.json` が一覧に出る（⑭ S1 で確かめた: サインインしていない間は使い始めの案内が出るため、出来事の一覧は画面の結合のテストと `events:list` の応答で確かめた。2つめの立ち上げはすぐ終わり、窓を閉じたら終了した） |
-| S2 認証 | デバイスフロー・PAT・トークンの保存（safeStorage の非同期版）・版が変わったときのキーチェーンの案内・`GET /user`・サインアウト。使い始めの案内の手順2。github/client と rate-budget | `src/main/{auth,github/client.ts,github/rate-budget.ts,github/viewer.ts,github/device-flow-client.ts}`、`src/renderer/{pages/keychain-notice,pages/onboarding,features/auth}` | F-27・F-28・F-36 (2)(5)・N-05 | 単体（スコープの確認・トークンの形）、結合M（デバイスフローの各応答）、結合R | 依頼者のアカウントでサインインする。前提: 5. の 0-4・0-5 |
+| S2 認証 | PAT（デバイスフローは CR-007 でやめた）・トークンの保存（safeStorage の非同期版）・版が変わったときのキーチェーンの案内・`GET /user`・サインアウト。使い始めの案内の手順2。github/client と rate-budget | `src/main/{auth,github/client.ts,github/rate-budget.ts,github/viewer.ts}`、`src/renderer/{pages/keychain-notice,pages/onboarding,features/auth}` | F-27・F-28・F-36 (2)(5)・N-05 | 単体（スコープの確認・トークンの形）、結合M（PAT の確かめの各応答）、結合R | 依頼者のアカウントでサインインする。前提: 5. の 0-5（2026-11-27 済み） |
 | S3 出来事 | GitHub の通知の問い合わせ（If-Modified-Since・X-Poll-Interval）、GraphQL での分解、CI の結果、取り戻し、受け取りの状態、出来事の一覧・絞り込み・状態の帯 | `src/main/{ingest,github/notifications.ts,github/timeline.ts,github/workflow-runs.ts}`、`src/renderer/features/{event-list,status}` | F-01〜F-06・F-11〜F-13・N-01・N-04・N-07・N-08 | 結合M（模擬の GitHub。失敗・取り戻し・回数）、結合R | 依頼者の実データで種類ごとに出るか（R-04）。CI の結果は 0-7 の後 |
 | S4 デスクトップ通知 | Notification、クリックで前面と出来事の強調（`ui:focusEvent`）、失敗の判定と帯 | `src/main/notify`、`src/renderer/features/event-list`（強調だけ） | F-07・F-08・N-09 | 結合M（出す・出さない） | アプリケーションフォルダに置いたビルドで、出る・クリックで前面に出る |
 | S5 PR の一覧 | 検索3本・自分待ちの理由・リロード・期間・絞り込み | `src/main/{pr-list,github/pr-search.ts}`、`src/renderer/features/pr-list` | F-14〜F-18・F-20 | 結合M、結合R | 依頼者の PC で5秒以内か（Q-02。本番の測定は ⑮） |
@@ -106,8 +106,8 @@ design-review.md の「進める条件」2. と risk-register.md 2. の申し送
 | 0-1 | GitHub に `zonbitamago/github-inbox`（public）を作り、secret scanning と push protection を有効にする。最初の push で `main` ができたら、`main` を保護する（PR を必須、CI の成功を必須。承認の数は求めない。1人のため）（2026-11-26 済み。リポジトリを作った。secret scanning と push protection は有効なことを API で確かめた。`main` の保護は最初の push の後）（2026-11-26 `main` の保護も済み。ルールセットで PR と CI の `check` を必須にした） | 技術者 | 作るのは最初の push の前、保護はその直後 | security-rules.md 2. の #5 |
 | 0-2 | 禁止語リスト（`.forbidden-words`。1行1語。`.gitignore` に入れる）を書く（2026-11-26 案を作った（53語）。技術者が見て直す。案での検査は0件） | 技術者 | 最初のコミットの前（B2 の記録した応答を入れる前） | — |
 | 0-3 | このリポジトリのコミットの作成者のメールアドレスを GitHub の noreply のものにする（`git config user.email`）（2026-11-26 済み。このリポジトリだけ `git config --local` で noreply にした） | 技術者 | 最初のコミットの前 | security-rules.md 2. の #4 |
-| 0-4 | OAuth App を登録する（auth-flow.md 1.。「Enable Device Flow」をオン）。client ID を技術者に渡す | 依頼者 | S2 の前 | build-and-release.md 6.、`src/main/auth/config.ts` |
-| 0-5 | **R-02・R-03 の確認**: 0-4 の OAuth App のデバイスフローで取ったトークン（`repo notifications`）で、(1) `is:pr involves:@me` の検索の件数とエラーの件数を、gh CLI のトークンでの結果と比べる（会社のリポジトリを読めるか）。(2) `GET /user/teams` が読めるか。AI が確かめるための使い捨ての小さな仕組みを用意し、**依頼者が自分の端末で `!` を付けて動かす**（トークンが AI の会話に入らないように。出すのは件数だけ） | 依頼者・AI | S2 の前（認証を作る前。DR-08） | ADR-004（OAuth を既定のままか、PAT を既定にするか）、domain-model.md 10. の #1、risk-register.md R-02・R-03 |
+| 0-4 | OAuth App を登録する（auth-flow.md 1.。名前は「Inbox for GitHub」。「Enable Device Flow」をオン）。client ID を技術者に渡す（2026-11-27 名前「github-inbox」が GitHub に受け付けられず、CR-006 で名前を変えた）（2026-11-27 済み。「Inbox for GitHub」で登録した。client ID は build-and-release.md 6. に控え、S2 で `config.ts` に入れる）（2026-11-27 0-5 の結果、CR-007 で OAuth App を使わなくなった。依頼者が登録を消した） | 依頼者 | S2 の前 | build-and-release.md 6.、`src/main/auth/config.ts` |
+| 0-5 | **R-02・R-03 の確認**: 0-4 の OAuth App のデバイスフローで取ったトークン（`repo notifications`）で、(1) `is:pr involves:@me` の検索の件数とエラーの件数を、gh CLI のトークンでの結果と比べる（会社のリポジトリを読めるか）。(2) `GET /user/teams` が読めるか。AI が確かめるための使い捨ての小さな仕組みを用意し、**依頼者が自分の端末で `!` を付けて動かす**（トークンが AI の会話に入らないように。出すのは件数だけ）（2026-11-27 OAuth App で確かめた。依頼者に頼まれて AI が動かした。トークンは画面にもファイルにも出さない仕組みにした。**R-02 は起きていた**: 会社の Organization の非公開リポジトリの GitHub の通知が、gh CLI では33件、OAuth App のトークンでは0件。認可の画面で、その Organization に「Request」（管理者の承認が要る）が出た。`GET /user/teams` は 200 だが0件（gh CLI では9件。アクセス制限で隠れたためか、言い切れない）。GraphQL で Team の名前を読むと `INSUFFICIENT_SCOPES`（github-api.md 3. の前提どおり）。検索 A・B の比べ合わせは、AI が確かめる仕組みに Team の項目を入れて問い合わせ全体が失敗したため、測れていない。続けて classic PAT（`repo`・`notifications`）で確かめた。gh CLI と同じだけ読めた（会社の Organization の非公開のもの: 検索 A 151件・検索 B 13件・GitHub の通知 33件。`/user/teams` は9件）。classic PAT だけにした（CR-007・D-031）。確かめに使った classic PAT と OAuth App の認可は、依頼者が片付けた。**0-5 は済み**） | 依頼者・AI | S2 の前（認証を作る前。DR-08） | ADR-004（OAuth を既定のままか、PAT を既定にするか）、domain-model.md 10. の #1、risk-register.md R-02・R-03 |
 | 0-6 | **B2 の記録**（2026-11-26 済み。#3 は CR-002 で不要になり、#5 は確かめた）: gh CLI で読み取りだけの問い合わせを行い、応答をリポジトリの外（作業用の一時フォルダ）に置き、架空のデータに置き換えたものだけを `test/fixtures/github/` に置く。置き換えの対応表はリポジトリに入れない。domain-model.md 10. の #3・#5 を確かめる | AI | B3 の前 | domain-model.md 10.、risk-register.md R-04 |
 | 0-7 | **R-05**: 本リポジトリの CI の実行で届く GitHub の通知（`ci_activity`）とワークフロー実行を、読み取りだけで記録する。CI を動かす push は技術者か、技術者に頼まれた AI が行う（2026-11-26 確かめた: 本リポジトリの CI（利用者が起動し、成功2回）では GitHub の通知は届いていない。GitHub の既定の設定が「失敗したワークフローだけ知らせる」ためと考えられる。技術者が決めた進め方: 技術者が GitHub の通知の設定（Settings → Notifications → System の Actions）で「Only notify for failed workflows」を外し、次に CI が動いたときに届いたものを AI が読み取りだけで記録する。利用者への案内（F-36 (3)）が正しいかも、あわせて確かめる）（2026-11-26 済み。技術者が Actions の通知を「on GitHub」にし、やり直した実行で届いたものを記録した。github-api.md 4.） | AI（記録）・技術者（push） | 0-1 と B0 の CI の後。S3 の前 | domain-model.md 10. の #2、risk-register.md R-05 |
 | 0-8 | 手動のチェックリスト（`docs/build/manual-checklist.md`。試作のチェックリストを広げる）を作る | AI | S4 の前 | test-conventions.md 2. |
@@ -158,7 +158,7 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 
 ---
 
-## 7. ⑬ で見つけた設計の食い違い（変更要求）
+## 7. ⑬・⑭ で見つけた設計の食い違い（変更要求）
 
 | # | 内容 | 状態 |
 | --- | --- | --- |
@@ -167,6 +167,8 @@ barrier の最後の PR を `main` に入れたときに凍結し、6.4 に版�
 | [CR-003](change-requests/CR-003.md) | GitHub の通知は `If-Modified-Since` では 304 にならない → `ETag`（`If-None-Match`）にする | 文書と記録の道具は直した。技術者の確認待ち |
 | [CR-004](change-requests/CR-004.md) | M-9 の出来事の中身を取る問い合わせが無い → `latest_comment_url` を読む | 技術者が決めた（2026-11-26） |
 | [CR-005](change-requests/CR-005.md) | 取り消されたレビュー（DISMISSED）をレビューの結果に写せない → 「コメントのみ」 | 技術者が決めた（2026-11-26。D-029） |
+| [CR-006](change-requests/CR-006.md) | OAuth App の名前を「github-inbox」にできない（GitHub が「GitHub」で始まる名前を受け付けない）→ OAuth App の名前だけ「Inbox for GitHub」 | 技術者・依頼者が決めた（2026-11-27。⑭ の前の 0-4 で見つけた。D-030）。その後 CR-007 で OAuth App を使わなくなった |
+| [CR-007](change-requests/CR-007.md) | OAuth App（デバイスフロー）では会社の非公開リポジトリを読めない（Organization の OAuth App のアクセス制限）→ classic PAT だけにする | 技術者・依頼者が決めた（2026-11-27。⑭ の前の 0-5 で見つけた。D-031） |
 
 ## 8. ⑬ で AI が決めた、設計に無かった細部（⑮ のレビューの材料）
 
