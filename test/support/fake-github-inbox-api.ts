@@ -84,6 +84,7 @@ export function createFakeApi(responses: {
     'auth:continueAfterKeychainNotice': OK_VOID,
     'auth:signOut': OK_VOID,
     'shell:openGitHub': OK_VOID,
+    'os:openNotificationSettings': OK_VOID,
     'onboarding:complete': OK_VOID,
     ...responses.answers,
   }

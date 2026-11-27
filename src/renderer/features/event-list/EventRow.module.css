@@ -17,6 +17,12 @@
   background: var(--color-surface-hover);
 }
 
+/* デスクトップ通知から開いた出来事（design-system.md 2.1 の color-surface-selected） */
+.emphasized,
+.emphasized:hover {
+  background: var(--color-surface-selected);
+}
+
 .head {
   display: flex;
   align-items: center;

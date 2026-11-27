@@ -64,6 +64,14 @@ export const en: Record<keyof typeof ja, string> = {
   'ingestStatus.signInAgain': 'Sign in again',
   'ingestStatus.retryAt': 'Resumes at',
   'ingestStatus.lastSuccessAt': 'Last received',
+  'desktopNotificationFailure.osRejected':
+    "Couldn't show a desktop notification. Notifications for this app may be turned off in your OS settings.",
+  'desktopNotificationFailure.outsideApplicationsFolder':
+    "Couldn't show a desktop notification because the app was opened outside the Applications folder. Move it to the Applications folder and open it again.",
+  'desktopNotificationFailure.failedAt': 'Failed at',
+  'desktopNotificationFailure.openSettings': 'Open notification settings',
+  'desktopNotificationFailure.openSettingsFailed':
+    "Couldn't open the notification settings. Open Notifications from your OS settings.",
   'eventType.review_requested': 'Review requested',
   'eventType.review': 'Review',
   'eventType.comment': 'Comment',

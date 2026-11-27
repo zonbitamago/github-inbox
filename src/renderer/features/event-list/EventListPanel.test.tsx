@@ -9,7 +9,7 @@ import {
   type FakeAnswers,
 } from '../../../../test/support/fake-github-inbox-api'
 import type { GitHubEvent } from '../../../shared/domain'
-import { createMainStore } from '../../main-store/main-store'
+import { createMainStore, type FocusRequest } from '../../main-store/main-store'
 import { MainStoreProvider } from '../../main-store/use-main-store'
 import { EventListPanel } from './EventListPanel'
 
@@ -61,13 +61,17 @@ const teamRequest = githubEvent('RRE_1', '2026-01-25T00:00:00Z', {
 async function renderPanel(events: GitHubEvent[], answers: FakeAnswers = {}) {
   const api = createFakeApi({ state: appState(), events, answers })
   const store = createMainStore(api)
-  render(
+  const panel = (focusRequest: FocusRequest | null) => (
     <MainStoreProvider store={store}>
-      <EventListPanel events={events} />
-    </MainStoreProvider>,
+      <EventListPanel events={events} focusRequest={focusRequest} />
+    </MainStoreProvider>
   )
+  const { rerender } = render(panel(null))
   await act(() => store.start())
-  return api
+  return Object.assign(api, {
+    /** デスクトップ通知がクリックされたことにする（ui:focusEvent。MainPage が渡す） */
+    focus: (focusRequest: FocusRequest) => rerender(panel(focusRequest)),
+  })
 }
 
 const rows = () => within(screen.getByRole('list')).getAllByRole('button')
@@ -194,5 +198,60 @@ describe('探した語の強調（D-032）', () => {
     await renderPanel([comment, review])
     await userEvent.selectOptions(screen.getByLabelText('種類'), 'レビュー')
     expect(marks(rowFor('検索を速くする'))).toEqual([])
+  })
+})
+
+// F-08、AC-11、component-frontend.md 5.「デスクトップ通知のクリック」
+describe('デスクトップ通知のクリックで、その出来事を強調する（F-08）', () => {
+  const emphasized = () =>
+    rows()
+      .filter((row) => row.getAttribute('aria-current') === 'true')
+      .map((row) => row.textContent)
+
+  it('その行を強調し、キーボードの位置をその行に移す（スクロールして見えるようにする）', async () => {
+    const panel = await renderPanel([comment, review, ci])
+    expect(emphasized()).toEqual([])
+    panel.focus({ eventId: review.id, seq: 1 })
+    expect(emphasized()).toHaveLength(1)
+    expect(emphasized()[0]).toContain('検索を速くする')
+    expect(document.activeElement).toBe(rowFor('検索を速くする'))
+  })
+
+  it('絞り込みで隠れていたら、絞り込みを解く', async () => {
+    const panel = await renderPanel([comment, review, ci])
+    await userEvent.type(screen.getByLabelText('文字で探す'), 'carol')
+    expect(rows()).toHaveLength(1)
+    panel.focus({ eventId: ci.id, seq: 1 })
+    expect(rows()).toHaveLength(3)
+    expect(screen.getByLabelText<HTMLInputElement>('文字で探す').value).toBe('')
+    expect(emphasized()[0]).toContain('CI: 文言を直す')
+  })
+
+  it('見えていれば、絞り込みはそのまま', async () => {
+    const panel = await renderPanel([comment, review, ci])
+    await userEvent.type(screen.getByLabelText('文字で探す'), 'carol')
+    panel.focus({ eventId: review.id, seq: 1 })
+    expect(rows()).toHaveLength(1)
+    expect(emphasized()[0]).toContain('検索を速くする')
+  })
+
+  it('次のクリックでは、強調をその出来事に移す。同じ出来事でもキーボードの位置を戻す', async () => {
+    const panel = await renderPanel([comment, review, ci])
+    panel.focus({ eventId: review.id, seq: 1 })
+    panel.focus({ eventId: comment.id, seq: 2 })
+    expect(emphasized()).toHaveLength(1)
+    expect(emphasized()[0]).toContain('ログイン画面')
+
+    screen.getByLabelText('文字で探す').focus()
+    panel.focus({ eventId: comment.id, seq: 3 })
+    expect(document.activeElement).toBe(rowFor('ログイン画面'))
+  })
+
+  it('一覧に無い出来事なら、何もしない', async () => {
+    const panel = await renderPanel([comment, review])
+    await userEvent.type(screen.getByLabelText('文字で探す'), 'carol')
+    panel.focus({ eventId: 'missing', seq: 1 })
+    expect(rows()).toHaveLength(1)
+    expect(emphasized()).toEqual([])
   })
 })
