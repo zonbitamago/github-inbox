@@ -7,6 +7,7 @@
 - 更新: 2026-11-27 使い始めの案内の手順2を、デバイスフローから classic PAT の貼り付けに変えた（CR-007）
 - 更新: 2026-11-27 ⑭ S3b で、知らせの帯の「サインインし直す」を画面の中だけの状態にした（CR-008）。出来事の一覧の絞り込み・時刻の表し方の細部を書いた
 - 更新: 2026-11-27 ⑭ S4 で、デスクトップ通知のクリックでの強調と、デスクトップ通知の失敗の帯の細部を書いた。手順4と設定の画面に、Mac で OS の設定でオフのときの確かめ方を足した（D-033。CR-011）
+- 更新: 2026-11-27 ⑭ S5 で、PR の一覧の細部とタブを書いた。探した語の強調を PR の一覧に広げ（D-032）、強調の部品を `ui/` に移した
 
 見た目（色・書体・余白・角丸、ライトとダーク）は ⑪ の design-system.md に従う。ここでは部品の分け方と、状態の持ち主だけを決める。`docs/requirements/mockup/` は見た目の土台にしない（AGENTS.md）。
 
@@ -44,7 +45,7 @@
 | Feature | 部品 | 要件 |
 | --- | --- | --- |
 | `event-list` | `EventListPanel`、`EventFilterBar`（文字・種類・リポジトリ）、`EventRow`（種類・レビューの結果か CI の結果・チーム宛て・対象・リポジトリ・誰が（bot の印）・いつ・抜粋。押すと GitHub のページを開く）、絞り込みの関数 `filterEvents`（⑭ S3b: 文字は、空白で区切った語をすべて含むもの。探すのは対象のタイトル・リポジトリと番号・誰が・抜粋・CI の結果。探した語は行の中で強調する。D-032） | F-11・F-12・F-13・F-32、AC-15・16・34 |
-| `pr-list` | `PrListPanel`、`PrFilterBar`（文字・状態・リポジトリ・自分待ちの理由。理由には「自分待ちの理由あり（どれか1つ）」も入れる）、`PrRow`（タイトル・リポジトリと番号・状態・作成者・更新・理由のラベル）、`ReloadButton`、`CopyAllLinksButton`、絞り込みの関数 `filterPrs` | F-14〜F-18・F-20・F-34、AC-17〜22・36 |
+| `pr-list` | `PrListPanel`、`PrFilterBar`（文字・状態・リポジトリ・自分待ちの理由。理由には「自分待ちの理由あり（どれか1つ）」も入れる）、`PrRow`（タイトル・リポジトリと番号・状態・作成者・更新・理由のラベル）、`ReloadButton`、`CopyAllLinksButton`、絞り込みの関数 `filterPrs`（⑭ S5: 文字は出来事の一覧と同じく、空白で区切った語をすべて含むもの。探すのはタイトル・リポジトリと番号・作成者で、探した語は行の中で強調する（D-032）。リロードは見出しの行のボタンで、取得中は「取得しています」、取れなかった理由は一覧の上に出し、前の一覧は残す。見出しの行に期間と最後に取った時刻も出す。`CopyAllLinksButton` は S6） | F-14〜F-18・F-20・F-34、AC-17〜22・36 |
 | `status` | `IngestStatusBanner`（受け取れていない理由と、できること: サインインし直す・待つ）、`DesktopNotificationBanner`（失敗の理由・出せなかった時刻と直し方: OS の設定を開く・アプリケーションフォルダへ移す。⑭ S4 では OS の設定を開くだけ作り、移す操作は S6 の手順1と合わせて足す。それまでは文言で移すよう伝える）、`UpdateBanner`（新しい版と Releases を開く） | N-08・N-09・F-31、AC-14・31・38 |
 | `auth` | `PatPanel`（作り方の手順・`repo` スコープの説明・作成ページへのリンク・貼り付け欄）。デバイスフローの `DeviceFlowPanel` は CR-007 でやめた | F-27・F-36 (2) |
 | `onboarding` | 3. の各手順の部品 | F-36 |
@@ -52,7 +53,7 @@
 
 ### 2.3 UI（使い回す小さな部品）
 
-`Button`、`Badge`（種類・理由のラベル）、`TextInput`、`Select`、`Toggle`、`Tabs`、`SplitView`（左右に並べる）、`Banner`、`Toast`、`ListRow`、`EmptyState`、`Spinner`、`Dialog`。色や余白は design-system.md の値（CSS の変数）だけを使う。アイコンは v0 では使わず、文字のボタンにする（部品を足さない。DR-18）。
+`Button`、`Badge`（種類・理由のラベル）、`TextInput`、`Select`、`Toggle`、`Tabs`、`SplitView`（左右に並べる）、`Banner`、`Toast`、`ListRow`、`EmptyState`、`Spinner`、`Dialog`。⑭ S5 で、2つの一覧が使う探した語の強調（`HighlightedText`・`highlight.ts`）と時計（`use-now.ts`）も置いた。`Tabs` は WAI-ARIA のタブの形（左右の矢印・Home・End で選び直す）で、選んでいないタブの中身は消さずに隠す（絞り込みを切り替えで失わないため）。色や余白は design-system.md の値（CSS の変数）だけを使う。アイコンは v0 では使わず、文字のボタンにする（部品を足さない。DR-18）。
 
 ---
 
